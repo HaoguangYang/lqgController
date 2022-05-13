@@ -257,13 +257,10 @@ namespace control
   }
 
   const Eigen::VectorXd& dLQR::calculateControl(const Eigen::VectorXd& X, const Eigen::VectorXd& Xd){
-    if (initialized){
-      e_ = Xd - X;
-      u_ = K_*e_;
-    }
-    else{
-      u_ << 0., 0., 0.;
-    }
+    if (!initialized)
+      throw std::runtime_error("LQR Controller is not initialized yet!");
+    e_ = Xd - X;
+    u_ = K_*e_;
     return u_;
   }
 

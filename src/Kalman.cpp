@@ -91,38 +91,63 @@ namespace control
     initialized = true;
   }
 
-  /*-- The version without control input --*/
-  void KalmanFilter::update(const Eigen::VectorXd& y) {
+  /*-- predict one step ahead --*/
+  std::pair<Eigen::VectorXd, Eigen::MatrixXD> KalmanFilter::predict(const Eigen::VectorXd& u){
     assert(initialized && "Filter is not initialized!");
-    x_hat_new = A * x_hat;
-    P = A*P*A.transpose() + Q;
-    K = P*C.transpose()*(C*P*C.transpose() + R).colPivHouseholderQr().solve(Eigen::MatrixXd::Identity(m,m));
-    if (K.hasNaN())
-      K = Eigen::MatrixXd::Identity(K.rows(), K.cols());
-    x_hat_new += K * (y - C*x_hat_new);
-    P = (I - K*C)*P;
-    x_hat = x_hat_new;
-    if (x_hat.hasNaN())
-      x_hat.setZero();
-    t += dt;
+    assert(this->B.rows()==this->A.rows() && "Filter is not initialized with a proper B matrix!");
+    if (this->predicted_ = true)
+      return std::make_pair(this->y_pred_, this->y_pred_cov_);
+    this->predicted_ = true;
+    this->x_hat_new = this->A * this->x_hat
+    this->x_hat_new += this->B * this->u;
+    this->P = this->A*this->P*this->A.transpose() + this->Q;
+    this->y_pred_ = this->C*this->x_hat_new;
+    this->y_pred_cov_ = this->C * this->P * this->C.transpose();
+    return std::make_pair(this->y_pred_, this->y_pred_cov_);
+  }
+
+  std::pair<Eigen::VectorXd, Eigen::MatrixXD> KalmanFilter::predict(){
+    assert(initialized && "Filter is not initialized!");
+    if (this->predicted_ = true)
+      return std::make_pair(this->y_pred_, this->y_pred_cov_);
+    this->predicted_ = true;
+    this->x_hat_new = this->A * this->x_hat
+    this->P = this->A*this->P*this->A.transpose() + this->Q;
+    this->y_pred_ = this->C*this->x_hat_new;
+    this->y_pred_cov_ = this->C * this->P * this->C.transpose();
+    return std::make_pair(this->y_pred_, this->y_pred_cov_);
   }
 
   /*-- Update done at the beginning of NEXT control cycle, 
    *   with previous control u published and new measurements y obtained. --*/
   void KalmanFilter::update(const Eigen::VectorXd& y, const Eigen::VectorXd& u) {
-    assert(initialized && "Filter is not initialized!");
-    assert(B.rows()==A.rows() && "Filter is not initialized with a proper B matrix!");
-    x_hat_new = A * x_hat + B * u;
-    P = A*P*A.transpose() + Q;
-    K = P*C.transpose()*(C*P*C.transpose() + R).colPivHouseholderQr().solve(Eigen::MatrixXd::Identity(m,m));
-    if (K.hasNaN())
-      K = Eigen::MatrixXd::Identity(K.rows(), K.cols());
-    x_hat_new += K * (y - C*x_hat_new);
-    P = (I - K*C)*P;
-    x_hat = x_hat_new;
-    if (x_hat.hasNaN())
-      x_hat.setZero();
-    t += dt;
+    if (!this->predicted_)
+      this->predict(u);
+    this->K = this->P*this->C.transpose()*(this->y_pred_cov_  + this->R).colPivHouseholderQr().solve(Eigen::MatrixXd::Identity(m,m));
+    if (this->K.hasNaN())
+      this->K = Eigen::MatrixXd::Identity(K.rows(), K.cols());
+    this->x_hat_new += this->K * (y - this->y_pred_);
+    this->P = (I - this->K*this->C)*this->P;
+    this->x_hat = this->x_hat_new;
+    if (this->x_hat.hasNaN())
+      this->x_hat.setZero();
+    this->t += this->dt;
+    this->predicted_ = false;
+  }
+
+  void KalmanFilter::update(const Eigen::VectorXd& y) {
+    if (!this->predicted_)
+      this->predict();
+    this->K = this->P*this->C.transpose()*(this->y_pred_cov_  + this->R).colPivHouseholderQr().solve(Eigen::MatrixXd::Identity(m,m));
+    if (this->K.hasNaN())
+      this->K = Eigen::MatrixXd::Identity(K.rows(), K.cols());
+    this->x_hat_new += this->K * (y - this->y_pred_);
+    this->P = (I - this->K*this->C)*this->P;
+    this->x_hat = this->x_hat_new;
+    if (this->x_hat.hasNaN())
+      this->x_hat.setZero();
+    this->t += this->dt;
+    this->predicted_ = false;
   }
 
   void KalmanFilter::update_time_variant_A(const Eigen::VectorXd& y, const Eigen::VectorXd& u, const Eigen::MatrixXd& A, double dt) {
