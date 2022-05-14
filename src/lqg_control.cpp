@@ -25,9 +25,9 @@ void LqgControl::LqgControl(int& XDoF, int& UDoF, int& YDoF,
                             std::vector<double>& Sd, std::vector<double>& Sn,
                             std::vector<double>& P0 = NULL,
                             std::vector<double>& N = NULL):
+                LqrControl(XDoF, UDoF, YDoF, discretize, u_feedback, dt, A, B, C, D, Q, R, N),
                 XDoF_:XDoF, UDoF_:UDoF, YDoF_:YDoF, dt_:dt, u_feedback_:u_feedback
 {
-  LqrControl::LqrControl(XDoF, UDoF, YDoF, discretize, u_feedback, dt, A, B, C, D, Q, R, N);
   try
   {
     if (Sd.size()!=XDoF*XDoF)
@@ -50,7 +50,7 @@ void LqgControl::LqgControl(int& XDoF, int& UDoF, int& YDoF,
                                   this->sigmaDisturbance_, this->sigmaMeasurements_, stateCov);
 }
 
-std::pair<Eigen::VectorXd, Eigen::MatrixXD> LqgControl::getPrediction(){
+std::pair<Eigen::VectorXd, Eigen::MatrixXd> LqgControl::getPrediction(){
   std::lock_guard<std::mutex> l(_mtx);
   if (this->predicted_)
     return std::make_pair(this->Y_, this->sigmaMeasurements_);
@@ -84,14 +84,14 @@ void LqgControl::updateMeasurementCov(const std_msgs::msg::Float64MultiArray::Sh
 }
 
 void LqgControl::updateMeasurementCov(Eigen::MatrixXd& cov){
-  if (cov->cols()==this->YDoF_ && cov->rows()==this->YDoF_)
+  if (cov.cols()==this->YDoF_ && cov.rows()==this->YDoF_)
   {
     std::lock_guard<std::mutex> l(_mtx);
     this->sigmaMeasurements_ = cov;
   }
 }
 
-void LqgControl::controlCallback()
+void LqgControl::controlCallback(rclcpp::Logger& logger)
 {
   rclcpp::Time control_time = rclcpp::Clock().now();
   rclcpp::Duration time_diff = control_time - this->state_update_time_;
@@ -115,33 +115,26 @@ void LqgControl::controlCallback()
                  "Calculated Best Command: \n" << this->u_raw_.transpose() << "\n" <<
                  "\n----------------------------------------\n";
                  */
-    //convertToBestGearThrottleSteer();
   }
   else
   {
     this->setCmdToZeros();
     if ( state_dt >= this->state_timeout_ ){
-      RCLCPP_DEBUG(this->get_logger(),
+      RCLCPP_DEBUG(logger,
                     "State observation age: %f seconds is too stale! (timeout = %f s)\n",
                     state_dt, this->state_timeout_);
     } else {
-      RCLCPP_DEBUG(this->get_logger(),
-                    "Controller waiting for sensor messages to initialize...\n");
+      RCLCPP_DEBUG(logger, "Controller waiting for sensor messages to initialize...\n");
       if (!this->optimal_state_estimate.isInitialized())
         initializeSystemAndControls();
-      if (this->optimal_state_estimate.isInitialized())
-        RCLCPP_DEBUG(this->get_logger(), "Controller State Estimator Initialized!\n");
+      if (this->optimal_state_estimate.isInitialized() )
+        RCLCPP_DEBUG(logger, "Controller State Estimator Initialized!\n");
     }
   }
 
   if (!this->u_feedback_)
     this->U_act_ = this->U_;
   
-  // Command-level constraints is still necessary at this level.
-  //if (!(this->get_parameter("mute").as_bool())){
-  //  publishSteering();
-  //  publishThrottleBrake();
-  //}
 }
 
 } 

@@ -34,8 +34,8 @@ void LqrControl::LqrControl(int& XDoF, int& UDoF, int& YDoF,
       throw std::runtime_error("State matrix B size is ill-formed!");
     if (C.size()!=YDoF*XDoF)
       throw std::runtime_error("State matrix C size is ill-formed!");
-    if (D.size()!=YDoF*UDoF)
-      throw std::runtime_error("State matrix D size is ill-formed!");
+    //if (D.size()!=YDoF*UDoF)
+    //  throw std::runtime_error("State matrix D size is ill-formed!");
     if (Q.size()!=XDoF*XDoF)
       throw std::runtime_error("State matrix Q size is ill-formed!");
     if (R.size()!=UDoF*UDoF)
@@ -73,16 +73,18 @@ void LqrControl::LqrControl(int& XDoF, int& UDoF, int& YDoF,
   // Create LQR object
   this->optimal_controller = dLQR(this->A_, this->B_, this->Q_, this->R_, this->N_);
   std::cout << "LQR Controller Gains: \n" << this->optimal_controller.getK() << std::endl;
+
+  this->logger_ = NULL;
 }
 
 int LqrControl::matrixPack(std::vector<double>& in, Eigen::MatrixXd& out){
   // conversion from std types to Eigen types
-  if (out->size() != in->size())
+  if (out.size() != in.size())
     return -1;
   size_t ind = 0;
-  for (size_t i = 0; i < out.rows; i++)
+  for (size_t i = 0; i < out.rows(); i++)
   {
-    for (size_t j = 0; j < out.cols; j++)
+    for (size_t j = 0; j < out.cols(); j++)
     {
       out(i,j) = in[ind];
       ind ++;
@@ -104,7 +106,7 @@ inline Eigen::VectorXd LqrControl::getControl()
 
 void LqrControl::updateActualControl(const Eigen::VectorXd& u){
   std::lock_guard<std::mutex> l(_mtx);
-  if (u->size != this->UDoF_)
+  if (u.size() != this->UDoF_)
     return;
   this->U_act_ = u;
 }
@@ -115,7 +117,7 @@ Eigen::VectorXd LqrControl::getPrediction(){
     return this->Y_;
   this->predicted_ = true;
   this->X_ = this->A_ * this->X_ + this->B_ * this->U_act_;
-  this->Y_ = this->C_ * this->X;
+  this->Y_ = this->C_ * this->X_;
   return this->Y_;
 }
 
@@ -135,7 +137,7 @@ void LqrControl::updateMeasurement(const std_msgs::msg::Float64MultiArray::Share
 }
 
 void LqrControl::updateMeasurement(Eigen::VectorXd& Y){
-  if (Y->size == this->YDoF_)
+  if (Y.size() == this->YDoF_)
   {
     std::lock_guard<std::mutex> l(_mtx);
     this->state_update_time_ = rclcpp::Clock().now();
@@ -163,14 +165,14 @@ void LqrControl::updateDesiredState(const std_msgs::msg::Float64MultiArray::Shar
 }
 
 void LqrControl::updateDesiredState(Eigen::VectorXd& X_des){
-  if (X_des->size == this->XDoF_)
+  if (X_des.size() == this->XDoF_)
   {
     std::lock_guard<std::mutex> l(_mtx);
     this->X_des_ = X_des;
   }
 }
 
-void LqrControl::controlCallback()
+void LqrControl::controlCallback(rclcpp::Logger& logger)
 {
   rclcpp::Time control_time = rclcpp::Clock().now();
   rclcpp::Duration time_diff = control_time - this->state_update_time_;
@@ -199,16 +201,15 @@ void LqrControl::controlCallback()
   {
     this->setCmdToZeros();
     if ( state_dt >= this->state_timeout_ ){
-      RCLCPP_DEBUG(this->get_logger(),
+      RCLCPP_DEBUG(logger,
                     "State observation age: %f seconds is too stale! (timeout = %f s)\n",
                     state_dt, this->state_timeout_);
     } else {
-      RCLCPP_DEBUG(this->get_logger(),
-                    "Controller waiting for sensor messages to initialize...\n");
-      if (!this->optimal_state_estimate.isInitialized())
+      RCLCPP_DEBUG(logger, "Controller waiting for sensor messages to initialize...\n");
+      /*if (!this->optimal_state_estimate.isInitialized())
         initializeSystemAndControls();
-      if (this->optimal_state_estimate.isInitialized())
-        RCLCPP_DEBUG(this->get_logger(), "Controller State Estimator Initialized!\n");
+      if (this->optimal_state_estimate.isInitialized() )
+        RCLCPP_DEBUG(logger, "Controller State Estimator Initialized!\n");*/
     }
   }
 

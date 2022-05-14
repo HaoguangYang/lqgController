@@ -57,15 +57,19 @@ class LqrControl :
 
     void updateMeasurement(Eigen::VectorXd& Y);
 
+    void updateMeasurementCov(const std_msgs::msg::Float64MultiArray::SharedPtr msg) { return; }
+
+    void updateMeasurementCov(Eigen::MatrixXd& cov) { return; }
+
     inline Eigen::VectorXd getDesiredState();
 
     void updateDesiredState(const std_msgs::msg::Float64MultiArray::SharedPtr msg);
 
     void updateDesiredState(Eigen::VectorXd& X_des);
 
-    void controlCallback();
+    void controlCallback(rclcpp::Logger& logger);
 
-  private:
+  protected:
     Eigen::MatrixXd A_;
     Eigen::MatrixXd B_;
     Eigen::MatrixXd C_;
@@ -78,7 +82,11 @@ class LqrControl :
     Eigen::VectorXd U_act_;
     Eigen::VectorXd Y_;
 
+    bool discretize_, u_feedback_;
+
     control::dLQR optimal_controller;
+
+    int XDoF_, UDoF_, YDoF_;
 
     mutable std::mutex _mtx;
 }; // end of class

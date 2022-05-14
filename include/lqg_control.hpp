@@ -33,7 +33,7 @@
 namespace control
 {
 
-class LqgControl : public LqrControl
+class LqgControl : public control::LqrControl
 {
   public:
     LqgControl();
@@ -48,15 +48,15 @@ class LqgControl : public LqrControl
                 std::vector<double>& N = NULL);
 
 
-    std::pair<Eigen::VectorXd, Eigen::MatrixXD> getPrediction();
+    std::pair<Eigen::VectorXd, Eigen::MatrixXd> getPrediction();
 
     void updateMeasurementCov(const std_msgs::msg::Float64MultiArray::SharedPtr msg);
 
     void updateMeasurementCov(Eigen::MatrixXd& cov);
 
-    void controlCallback();
+    void controlCallback(rclcpp::Logger& logger);
 
-  private:
+  protected:
     Eigen::MatrixXd sigmaMeasurements_;
     Eigen::MatrixXd sigmaDisturbance_;
     control::KalmanFilter optimal_state_estimate;

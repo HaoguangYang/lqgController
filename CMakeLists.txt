@@ -28,7 +28,12 @@ find_package(Eigen3 REQUIRED NO_MODULE)
 
 include_directories(include)
 
-add_executable(lqg_control_node src/lqg_control_node.cpp src/Kalman.cpp src/LQR.cpp)
+add_executable(lqg_control_node
+    src/lqg_control_node.cpp
+    src/Kalman.cpp
+    src/LQR.cpp
+    src/lqg_control.cpp
+    src/lqr_control.cpp)
 #target_link_libraries(lqg_control_node ${ARMADILLO_LIBRARIES})
 ament_target_dependencies(lqg_control_node rclcpp std_msgs nav_msgs sensor_msgs Eigen3)# Armadillo LAPACK)
 install(

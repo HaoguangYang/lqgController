@@ -92,7 +92,7 @@ namespace control
   }
 
   /*-- predict one step ahead --*/
-  std::pair<Eigen::VectorXd, Eigen::MatrixXD> KalmanFilter::predict(const Eigen::VectorXd& u){
+  std::pair<Eigen::VectorXd, Eigen::MatrixXd> KalmanFilter::predict(const Eigen::VectorXd& u){
     assert(initialized && "Filter is not initialized!");
     assert(this->B.rows()==this->A.rows() && "Filter is not initialized with a proper B matrix!");
     if (this->predicted_ = true)
@@ -106,7 +106,7 @@ namespace control
     return std::make_pair(this->y_pred_, this->y_pred_cov_);
   }
 
-  std::pair<Eigen::VectorXd, Eigen::MatrixXD> KalmanFilter::predict(){
+  std::pair<Eigen::VectorXd, Eigen::MatrixXd> KalmanFilter::predict(){
     assert(initialized && "Filter is not initialized!");
     if (this->predicted_ = true)
       return std::make_pair(this->y_pred_, this->y_pred_cov_);
