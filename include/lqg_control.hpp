@@ -43,9 +43,24 @@ class LqgControl : public control::LqrControl
                 std::vector<double>& A, std::vector<double>& B,
                 std::vector<double>& C, std::vector<double>& D,
                 std::vector<double>& Q, std::vector<double>& R,
+                std::vector<double>& Sd, std::vector<double>& Sn);
+
+    LqgControl(int& XDoF, int& UDoF, int& YDoF,
+                bool& discretize, bool& u_feedback, double& dt,
+                std::vector<double>& A, std::vector<double>& B,
+                std::vector<double>& C, std::vector<double>& D,
+                std::vector<double>& Q, std::vector<double>& R,
+                std::vector<double>& N,
+                std::vector<double>& Sd, std::vector<double>& Sn);
+
+    LqgControl(int& XDoF, int& UDoF, int& YDoF,
+                bool& discretize, bool& u_feedback, double& dt,
+                std::vector<double>& A, std::vector<double>& B,
+                std::vector<double>& C, std::vector<double>& D,
+                std::vector<double>& Q, std::vector<double>& R,
+                std::vector<double>& N,
                 std::vector<double>& Sd, std::vector<double>& Sn,
-                std::vector<double>& P0,
-                std::vector<double>& N = NULL);
+                std::vector<double>& P0);
 
 
     std::pair<Eigen::VectorXd, Eigen::MatrixXd> getPrediction();

@@ -28,7 +28,7 @@
 namespace control
 {
 
-class LqrControl :
+class LqrControl
 {
   public:
     LqrControl();
@@ -39,10 +39,16 @@ class LqrControl :
                 bool& discretize, bool& u_feedback, double& dt,
                 std::vector<double>& A, std::vector<double>& B,
                 std::vector<double>& C, std::vector<double>& D,
+                std::vector<double>& Q, std::vector<double>& R);
+
+    LqrControl(int& XDoF, int& UDoF, int& YDoF,
+                bool& discretize, bool& u_feedback, double& dt,
+                std::vector<double>& A, std::vector<double>& B,
+                std::vector<double>& C, std::vector<double>& D,
                 std::vector<double>& Q, std::vector<double>& R,
-                std::vector<double>& N = NULL);
-    
-    
+                std::vector<double>& N);
+
+
     int matrixPack(std::vector<double>& in, Eigen::MatrixXd& out);
 
     inline void setCmdToZeros();
@@ -82,7 +88,11 @@ class LqrControl :
     Eigen::VectorXd U_act_;
     Eigen::VectorXd Y_;
 
-    bool discretize_, u_feedback_;
+    bool discretize_, u_feedback_, predicted_;
+
+    rclcpp::Time state_update_time_, last_control_time_;
+
+    double state_timeout_, dt_;
 
     control::dLQR optimal_controller;
 

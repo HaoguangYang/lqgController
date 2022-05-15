@@ -64,6 +64,9 @@ namespace control
 
     inline bool isInitialized() const { return initialized; };
 
+    std::pair<Eigen::VectorXd, Eigen::MatrixXd> predict(const Eigen::VectorXd& u);
+    std::pair<Eigen::VectorXd, Eigen::MatrixXd> predict();
+
     /**
     * Update the estimated state based on measured values. The
     * time step is assumed to remain constant.
@@ -107,11 +110,13 @@ namespace control
     // Is the filter initialized?
     bool initialized;
 
+    bool predicted_;
+
     // n-size identity
-    Eigen::MatrixXd I;
+    Eigen::MatrixXd I, y_pred_cov_;
 
     // Estimated states
-    Eigen::VectorXd x_hat, x_hat_new;
+    Eigen::VectorXd x_hat, x_hat_new, y_pred_;
   };
 }
 

@@ -22,25 +22,24 @@ void LqrControl::LqrControl(int& XDoF, int& UDoF, int& YDoF,
                             std::vector<double>& A, std::vector<double>& B,
                             std::vector<double>& C, std::vector<double>& D,
                             std::vector<double>& Q, std::vector<double>& R,
-                            std::vector<double>& N = NULL):
-                XDoF_:XDoF, UDoF_:UDoF, YDoF_:YDoF, dt_:dt, u_feedback_:u_feedback
+                            std::vector<double>& N):
+                XDoF_(XDoF), UDoF_(UDoF), YDoF_(YDoF), dt_(dt), u_feedback_(u_feedback)
 {
   // clean std::vector parameters (check !NULL and check size)
-  try
-  {
-    if (A.size()!=XDoF*XDoF)
-      throw std::runtime_error("State matrix A size is ill-formed!");
-    if (B.size()!=XDoF*UDoF)
-      throw std::runtime_error("State matrix B size is ill-formed!");
-    if (C.size()!=YDoF*XDoF)
-      throw std::runtime_error("State matrix C size is ill-formed!");
-    //if (D.size()!=YDoF*UDoF)
-    //  throw std::runtime_error("State matrix D size is ill-formed!");
-    if (Q.size()!=XDoF*XDoF)
-      throw std::runtime_error("State matrix Q size is ill-formed!");
-    if (R.size()!=UDoF*UDoF)
-      throw std::runtime_error("State matrix R size is ill-formed!");
-  }
+  if (A.size()!=XDoF*XDoF)
+    throw std::runtime_error("State matrix A size is ill-formed!");
+  if (B.size()!=XDoF*UDoF)
+    throw std::runtime_error("State matrix B size is ill-formed!");
+  if (C.size()!=YDoF*XDoF)
+    throw std::runtime_error("State matrix C size is ill-formed!");
+  //if (D.size()!=YDoF*UDoF)
+  //  throw std::runtime_error("State matrix D size is ill-formed!");
+  if (Q.size()!=XDoF*XDoF)
+    throw std::runtime_error("Weight matrix Q size is ill-formed!");
+  if (R.size()!=UDoF*UDoF)
+    throw std::runtime_error("Weight matrix R size is ill-formed!");
+  if (N.size()!=XDoF*UDoF)
+    throw std::runtime_error("Weight matrix N size is ill-formed!");
   // convert to Eigen types
   this->A_ = Eigen::MatrixXd::Identity(XDoF, XDoF);
   this->B_ = Eigen::MatrixXd::Zero(XDoF, UDoF);
@@ -60,8 +59,7 @@ void LqrControl::LqrControl(int& XDoF, int& UDoF, int& YDoF,
   //matrixPack(D, this->D_);
   matrixPack(Q, this->Q_);
   matrixPack(R, this->R_);
-  if (N!=NULL)
-    matrixPack(N, this->N_);
+  matrixPack(N, this->N_);
   if (discretize)
   {
     // Apply Tustin transformation to discretize A_.
@@ -73,9 +71,17 @@ void LqrControl::LqrControl(int& XDoF, int& UDoF, int& YDoF,
   // Create LQR object
   this->optimal_controller = dLQR(this->A_, this->B_, this->Q_, this->R_, this->N_);
   std::cout << "LQR Controller Gains: \n" << this->optimal_controller.getK() << std::endl;
-
-  this->logger_ = NULL;
 }
+
+void LqrControl::LqrControl(int& XDoF, int& UDoF, int& YDoF,
+                            bool& discretize, bool& u_feedback, double& dt,
+                            std::vector<double>& A, std::vector<double>& B,
+                            std::vector<double>& C, std::vector<double>& D,
+                            std::vector<double>& Q, std::vector<double>& R):
+                LqrControl(XDoF, UDoF, YDoF,
+                           discretize, u_feedback, dt,
+                           A, B, C, D, Q, R,
+                           std::vector<double>(XDoF*UDoF, 0.0));
 
 int LqrControl::matrixPack(std::vector<double>& in, Eigen::MatrixXd& out){
   // conversion from std types to Eigen types

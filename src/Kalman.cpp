@@ -98,8 +98,8 @@ namespace control
     if (this->predicted_ = true)
       return std::make_pair(this->y_pred_, this->y_pred_cov_);
     this->predicted_ = true;
-    this->x_hat_new = this->A * this->x_hat
-    this->x_hat_new += this->B * this->u;
+    this->x_hat_new = this->A * this->x_hat;
+    this->x_hat_new += this->B * u;
     this->P = this->A*this->P*this->A.transpose() + this->Q;
     this->y_pred_ = this->C*this->x_hat_new;
     this->y_pred_cov_ = this->C * this->P * this->C.transpose();
@@ -111,7 +111,7 @@ namespace control
     if (this->predicted_ = true)
       return std::make_pair(this->y_pred_, this->y_pred_cov_);
     this->predicted_ = true;
-    this->x_hat_new = this->A * this->x_hat
+    this->x_hat_new = this->A * this->x_hat;
     this->P = this->A*this->P*this->A.transpose() + this->Q;
     this->y_pred_ = this->C*this->x_hat_new;
     this->y_pred_cov_ = this->C * this->P * this->C.transpose();

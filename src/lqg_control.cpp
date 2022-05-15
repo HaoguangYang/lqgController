@@ -22,30 +22,21 @@ void LqgControl::LqgControl(int& XDoF, int& UDoF, int& YDoF,
                             std::vector<double>& A, std::vector<double>& B,
                             std::vector<double>& C, std::vector<double>& D,
                             std::vector<double>& Q, std::vector<double>& R,
+                            std::vector<double>& N,
                             std::vector<double>& Sd, std::vector<double>& Sn,
-                            std::vector<double>& P0 = NULL,
-                            std::vector<double>& N = NULL):
-                LqrControl(XDoF, UDoF, YDoF, discretize, u_feedback, dt, A, B, C, D, Q, R, N),
-                XDoF_:XDoF, UDoF_:UDoF, YDoF_:YDoF, dt_:dt, u_feedback_:u_feedback
+                            std::vector<double>& P0):
+                LqrControl(XDoF, UDoF, YDoF, discretize, u_feedback, dt, A, B, C, D, Q, R, N)
 {
-  try
-  {
-    if (Sd.size()!=XDoF*XDoF)
-      throw std::runtime_error("Disturbance covariance matrix Sd is ill-formed!");
-    if (Sn.size()!=YDoF*YDoF)
-      throw std::runtime_error("Measurement covariance matrix Sn is ill-formed!");
-  }
+  if (Sd.size()!=XDoF*XDoF)
+    throw std::runtime_error("Disturbance covariance matrix Sd is ill-formed!");
+  if (Sn.size()!=YDoF*YDoF)
+    throw std::runtime_error("Measurement covariance matrix Sn is ill-formed!");
   matrixPack(Sd, this->sigmaDisturbance_);
   matrixPack(Sn, this->sigmaMeasurements_);
   Eigen::MatrixXd stateCov;
   stateCov = Eigen::MatrixXd::Zero(XDoF, XDoF);
-  if (P0 != NULL)
-  {
-    if (P0.size == XDoF*XDoF)
-    {
-      matrixPack(Sd, stateCov);
-    }
-  }
+  matrixPack(Sd, stateCov);
+  
   this->optimal_state_estimate = KalmanFilter(dt, this->A_, this->B_, this->C_, 
                                   this->sigmaDisturbance_, this->sigmaMeasurements_, stateCov);
 }
@@ -105,7 +96,7 @@ void LqgControl::controlCallback(rclcpp::Logger& logger)
   if ( state_dt < this->state_timeout_ && this->optimal_state_estimate.isInitialized() )
   {
     // summarize asynchronous updates of the state measurements.
-    this->optimal_state_estimate.update_time_variant_R(this->Y_, this->U_act_, this->sigmaMeasurements_, dt);
+    this->optimal_state_estimate.update_time_variant_R(this->Y_, this->U_act_, this->sigmaMeasurements_, dt_);
     this->U_ = this->optimal_controller.calculateControl(this->optimal_state_estimate.state(), this->X_des_);
     
     //std::cout << "Estimated State: \n" << this->x_est_.transpose() << "\n";
