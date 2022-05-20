@@ -192,7 +192,7 @@ void LqrControl::controlCallback(rclcpp::Logger& logger)
   if ( state_dt < this->state_timeout_ )
   {
     // summarize asynchronous updates of the state measurements.
-    this->X_ = this->C_.template bdcSvd<Eigen::ComputeThinU | Eigen::ComputeThinV>().solve(this->Y_);
+    this->X_ = this->C_.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(this->Y_);
     this->U_ = this->optimal_controller.calculateControl(this->X_, this->X_des_);
     
     //std::cout << "Estimated State: \n" << this->x_est_.transpose() << "\n";

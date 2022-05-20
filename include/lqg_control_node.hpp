@@ -35,7 +35,8 @@ namespace control
 class LqgControlNode : public rclcpp::Node
 {
   public:
-    LqgControlNode();
+  
+    LqgControlNode(const rclcpp::NodeOptions& options);
 
     std_msgs::msg::Float64MultiArray desiredStates;
 
@@ -48,6 +49,8 @@ class LqgControlNode : public rclcpp::Node
     std_msgs::msg::Float64MultiArray measurementsCov;
 
   protected:
+
+    void registerStateSpaceIO();
 
     void updateMeasurement(const std_msgs::msg::Float64MultiArray::SharedPtr msg);
 
@@ -65,15 +68,17 @@ class LqgControlNode : public rclcpp::Node
 
     double dt_;
 
-    static auto controller_;
+    control::LqgControl controller_;
 
+    rclcpp::QoS *qos_;
     rclcpp::TimerBase::SharedPtr control_timer_;
 
-    rclcpp::Publisher::SharedPtr pubCmd_, pubStateErr_, subMeas_, subCov_, subDes_;
+    rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr pubCmdVect_, pubStateErrVect_;
+    rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr subMeasVect_, subCovMat_, subDesVect_;
 
     int XDoF_, UDoF_, YDoF_;
 
-    std::vector<double> aM_, bM_, cM_, dM_, qM_, rM_, sdM_, snM_, nM_;
+    std::vector<double> aM_, bM_, cM_, dM_, qM_, rM_, sdM_, snM_, p0M_, nM_;
 }; // end of class
 
 } // end of namespace

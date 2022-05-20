@@ -26,34 +26,46 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/float64_multi_array.hpp"
-#include "lqr_control.hpp"
 #include "LQR.hpp"
 #include "Kalman.hpp"
 
 namespace control
 {
 
-class LqgControl : public control::LqrControl
+class LqgControl
 {
   public:
-    LqgControl();
+    LqgControl() { this->_mtx = new std::mutex(); };
 
-    LqgControl(int& XDoF, int& UDoF, int& YDoF,
+    LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
+                bool& discretize, bool& u_feedback, double& dt,
+                std::vector<double>& A, std::vector<double>& B,
+                std::vector<double>& C, std::vector<double>& D,
+                std::vector<double>& Q, std::vector<double>& R);
+
+    LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
+                bool& discretize, bool& u_feedback, double& dt,
+                std::vector<double>& A, std::vector<double>& B,
+                std::vector<double>& C, std::vector<double>& D,
+                std::vector<double>& Q, std::vector<double>& R,
+                std::vector<double>& N);
+
+    LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
                 bool& discretize, bool& u_feedback, double& dt,
                 std::vector<double>& A, std::vector<double>& B,
                 std::vector<double>& C, std::vector<double>& D,
                 std::vector<double>& Q, std::vector<double>& R,
                 std::vector<double>& Sd, std::vector<double>& Sn);
 
-    LqgControl(int& XDoF, int& UDoF, int& YDoF,
+    LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
                 bool& discretize, bool& u_feedback, double& dt,
                 std::vector<double>& A, std::vector<double>& B,
                 std::vector<double>& C, std::vector<double>& D,
                 std::vector<double>& Q, std::vector<double>& R,
-                std::vector<double>& N,
-                std::vector<double>& Sd, std::vector<double>& Sn);
+                std::vector<double>& Sd, std::vector<double>& Sn,
+                std::vector<double>& P0);
 
-    LqgControl(int& XDoF, int& UDoF, int& YDoF,
+    LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
                 bool& discretize, bool& u_feedback, double& dt,
                 std::vector<double>& A, std::vector<double>& B,
                 std::vector<double>& C, std::vector<double>& D,
@@ -62,19 +74,73 @@ class LqgControl : public control::LqrControl
                 std::vector<double>& Sd, std::vector<double>& Sn,
                 std::vector<double>& P0);
 
+    inline int matrixPack(std::vector<double>& in, Eigen::MatrixXd& out);
 
-    std::pair<Eigen::VectorXd, Eigen::MatrixXd> getPrediction();
+    inline void setCmdToZeros();
 
-    void updateMeasurementCov(const std_msgs::msg::Float64MultiArray::SharedPtr msg);
+    inline Eigen::VectorXd getControl() { return this->U_; };
 
-    void updateMeasurementCov(Eigen::MatrixXd& cov);
+    inline void updateActualControl(const Eigen::VectorXd& u);
 
-    void controlCallback(rclcpp::Logger& logger);
+    inline std::pair<Eigen::VectorXd, Eigen::MatrixXd> getPrediction();
+    
+    inline void updateMeasurement(const std_msgs::msg::Float64MultiArray::SharedPtr msg);
+
+    inline void updateMeasurement(Eigen::VectorXd& Y);
+
+    inline void updateMeasurementCov(const std_msgs::msg::Float64MultiArray::SharedPtr msg);
+
+    inline void updateMeasurementCov(Eigen::MatrixXd& cov);
+
+    inline Eigen::VectorXd getDesiredState() { return this->X_des_; };
+
+    inline void updateDesiredState(const std_msgs::msg::Float64MultiArray::SharedPtr msg);
+
+    inline void updateDesiredState(Eigen::VectorXd& X_des);
+
+    inline void controlCallback(const rclcpp::Logger& logger);
 
   protected:
+    Eigen::MatrixXd A_;
+    Eigen::MatrixXd B_;
+    Eigen::MatrixXd C_;
+    Eigen::MatrixXd Q_;
+    Eigen::MatrixXd R_;
+    Eigen::MatrixXd N_;
+    Eigen::VectorXd X_;
+    Eigen::VectorXd X_des_;
+    Eigen::VectorXd U_;
+    Eigen::VectorXd U_act_;
+    Eigen::VectorXd Y_;
+
+    rclcpp::Time state_update_time_, last_control_time_;
+
+    bool discretize_, u_feedback_, predicted_;
+    double state_timeout_, dt_;
+    int XDoF_, UDoF_, YDoF_;
+
+    control::dLQR optimal_controller;
     Eigen::MatrixXd sigmaMeasurements_;
     Eigen::MatrixXd sigmaDisturbance_;
     control::KalmanFilter optimal_state_estimate;
+
+    mutable std::mutex *_mtx;
+  
+  private:
+    inline void _LqrControlFull_(const int& XDoF, const int& UDoF, const int& YDoF,
+                bool& discretize, bool& u_feedback, double& dt,
+                std::vector<double>& A, std::vector<double>& B,
+                std::vector<double>& C, std::vector<double>& D,
+                std::vector<double>& Q, std::vector<double>& R,
+                std::vector<double>& N);
+    inline void _LqgControlFull_(const int& XDoF, const int& UDoF, const int& YDoF,
+                bool& discretize, bool& u_feedback, double& dt,
+                std::vector<double>& A, std::vector<double>& B,
+                std::vector<double>& C, std::vector<double>& D,
+                std::vector<double>& Q, std::vector<double>& R,
+                std::vector<double>& N,
+                std::vector<double>& Sd, std::vector<double>& Sn,
+                std::vector<double>& P0);
 }; // end of class
 
 } // end of namespace

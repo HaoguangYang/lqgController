@@ -19,6 +19,10 @@ namespace control
   class KalmanFilter {
 
   public:
+    /**
+    * Create a blank estimator.
+    */
+    KalmanFilter();
 
     /**
     * Create a Kalman filter with the specified matrices.
@@ -29,15 +33,20 @@ namespace control
     *   R - Measurement noise covariance
     *   P - Estimate error covariance
     */
+
     KalmanFilter(
-        double dt,
-        const Eigen::MatrixXd& A,
-        const Eigen::MatrixXd& B,
-        const Eigen::MatrixXd& C,
-        const Eigen::MatrixXd& Q,
-        const Eigen::MatrixXd& R,
-        const Eigen::MatrixXd& P
+      double dt,
+      const Eigen::MatrixXd& A,
+      const Eigen::MatrixXd& C
     );
+
+    KalmanFilter(
+      double dt,
+      const Eigen::MatrixXd& A,
+      const Eigen::MatrixXd& B,
+      const Eigen::MatrixXd& C
+    );
+
     KalmanFilter(
         double dt,
         const Eigen::MatrixXd& A,
@@ -47,10 +56,15 @@ namespace control
         const Eigen::MatrixXd& P
     );
 
-    /**
-    * Create a blank estimator.
-    */
-    KalmanFilter();
+    KalmanFilter(
+        double dt,
+        const Eigen::MatrixXd& A,
+        const Eigen::MatrixXd& B,
+        const Eigen::MatrixXd& C,
+        const Eigen::MatrixXd& Q,
+        const Eigen::MatrixXd& R,
+        const Eigen::MatrixXd& P
+    );
 
     /**
     * Initialize the filter with initial states as zero.
@@ -62,29 +76,45 @@ namespace control
     */
     void init(double t0, const Eigen::VectorXd& x0);
 
+    void init(double t0, const Eigen::VectorXd& x0, const Eigen::MatrixXd& P0);
+
     inline bool isInitialized() const { return initialized; };
 
-    std::pair<Eigen::VectorXd, Eigen::MatrixXd> predict(const Eigen::VectorXd& u);
-    std::pair<Eigen::VectorXd, Eigen::MatrixXd> predict();
+    inline void setProcessDisturbanceCov(Eigen::MatrixXd& Q) { this->Q = Q; };
+
+    inline void setMeasurementNoiseCov(Eigen::MatrixXd& R) { this->R = R; };
+
+    inline std::pair<Eigen::VectorXd, Eigen::MatrixXd> predict(const Eigen::VectorXd& u);
+    inline std::pair<Eigen::VectorXd, Eigen::MatrixXd> predict();
 
     /**
     * Update the estimated state based on measured values. The
     * time step is assumed to remain constant.
     */
-    void update(const Eigen::VectorXd& y, const Eigen::VectorXd& u);
-    void update(const Eigen::VectorXd& y);
+    inline void update(const Eigen::VectorXd& y, const Eigen::VectorXd& u);
+    inline void update(const Eigen::VectorXd& y);
+
+    inline void updateNoCov(const Eigen::VectorXd& y);
 
     /**
     * Update the estimated state based on measured values,
     * using the given time step and dynamics matrix.
     */
-    void update_time_variant_A(const Eigen::VectorXd& y, const Eigen::VectorXd& u, const Eigen::MatrixXd& A, double dt);
-    void update_time_variant_A(const Eigen::VectorXd& y, const Eigen::MatrixXd& A, double dt);
-    void update_time_variant_R(const Eigen::VectorXd& y, const Eigen::VectorXd& u, const Eigen::MatrixXd& R, double dt);
-    void update_time_variant_R(const Eigen::VectorXd& y, const Eigen::MatrixXd& R, double dt);
-    void update_time_variant_both_A_and_R
+    inline void update_time_variant_A(const Eigen::VectorXd& y, const Eigen::VectorXd& u, const Eigen::MatrixXd& A);
+    inline void update_time_variant_A(const Eigen::VectorXd& y, const Eigen::VectorXd& u, const Eigen::MatrixXd& A, double dt);
+    inline void update_time_variant_A(const Eigen::VectorXd& y, const Eigen::MatrixXd& A);
+    inline void update_time_variant_A(const Eigen::VectorXd& y, const Eigen::MatrixXd& A, double dt);
+    inline void update_time_variant_R(const Eigen::VectorXd& y, const Eigen::VectorXd& u, const Eigen::MatrixXd& R);
+    inline void update_time_variant_R(const Eigen::VectorXd& y, const Eigen::VectorXd& u, const Eigen::MatrixXd& R, double dt);
+    inline void update_time_variant_R(const Eigen::VectorXd& y, const Eigen::MatrixXd& R);
+    inline void update_time_variant_R(const Eigen::VectorXd& y, const Eigen::MatrixXd& R, double dt);
+    inline void update_time_variant_both_A_and_R
+      (const Eigen::VectorXd& y, const Eigen::VectorXd& u, const Eigen::MatrixXd& A, const Eigen::MatrixXd& R);
+    inline void update_time_variant_both_A_and_R
       (const Eigen::VectorXd& y, const Eigen::VectorXd& u, const Eigen::MatrixXd& A, const Eigen::MatrixXd& R, double dt);
-    void update_time_variant_both_A_and_R
+    inline void update_time_variant_both_A_and_R
+      (const Eigen::VectorXd& y, const Eigen::MatrixXd& A, const Eigen::MatrixXd& R);
+    inline void update_time_variant_both_A_and_R
       (const Eigen::VectorXd& y, const Eigen::MatrixXd& A, const Eigen::MatrixXd& R, double dt);
 
     /**
@@ -99,10 +129,10 @@ namespace control
     Eigen::MatrixXd A, B, C, Q, R, P, K, P0;
 
     // System dimensions
-    int m, n;
+    int YDoF_, XDoF_, UDoF_;
 
     // Initial and current time
-    double t0, t;
+    double t;
 
     // Discrete time step
     double dt;
@@ -113,7 +143,7 @@ namespace control
     bool predicted_;
 
     // n-size identity
-    Eigen::MatrixXd I, y_pred_cov_;
+    Eigen::MatrixXd y_pred_cov_;
 
     // Estimated states
     Eigen::VectorXd x_hat, x_hat_new, y_pred_;

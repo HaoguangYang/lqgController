@@ -17,10 +17,11 @@
 
 namespace control
 {
-LqgControlNode::LqgControlNode(const rclcpp::NodeOptions& options) : Node("LqgControlNode", options)
+LqgControlNode::LqgControlNode(const rclcpp::NodeOptions& options=rclcpp::NodeOptions()):
+  Node("LqgControlNode", options)
 {
-  auto qos = rclcpp::QoS(rclcpp::QoSInitialization(RMW_QOS_POLICY_HISTORY_KEEP_LAST, 1));
-  qos.best_effort();
+  qos_ = new rclcpp::QoS(rclcpp::QoSInitialization(RMW_QOS_POLICY_HISTORY_KEEP_LAST, 1));
+  qos_->best_effort();
 
   // Declare Parameters
   mute_ = this->declare_parameter<bool>("mute", false);
@@ -32,25 +33,26 @@ LqgControlNode::LqgControlNode(const rclcpp::NodeOptions& options) : Node("LqgCo
   XDoF_ = this->declare_parameter<int>("input_dims", 10);
   UDoF_ = this->declare_parameter<int>("output_dims", 3);
   YDoF_ = this->declare_parameter<int>("observable_dims", 10);
-  aM_ = this->declare_parameter<rclcpp::PARAMETER_DOUBLE_ARRAY>("A_matrix");
-  bM_ = this->declare_parameter<rclcpp::PARAMETER_DOUBLE_ARRAY>("B_matrix");
+  aM_ = this->declare_parameter<std::vector<double>>("A_matrix");
+  bM_ = this->declare_parameter<std::vector<double>>("B_matrix");
   discretize_ = this->declare_parameter<bool>("A_B_matrices_are_continuous", false);
-  cM_ = this->declare_parameter<rclcpp::PARAMETER_DOUBLE_ARRAY>("C_matrix");
-  dM_ = this->declare_parameter<rclcpp::PARAMETER_DOUBLE_ARRAY>("D_matrix");
-  qM_ = this->declare_parameter<rclcpp::PARAMETER_DOUBLE_ARRAY>("Q_matrix");
-  rM_ = this->declare_parameter<rclcpp::PARAMETER_DOUBLE_ARRAY>("R_matrix");
+  cM_ = this->declare_parameter<std::vector<double>>("C_matrix");
+  dM_ = this->declare_parameter<std::vector<double>>("D_matrix");
+  qM_ = this->declare_parameter<std::vector<double>>("Q_matrix");
+  rM_ = this->declare_parameter<std::vector<double>>("R_matrix");
   u_fb_ = this->declare_parameter<bool>("processed_control_feedback", true);
-  sdM_ = this->declare_parameter<rclcpp::PARAMETER_DOUBLE_ARRAY>("ProcessDisturbanceCov_matrix");
-  snM_ = this->declare_parameter<rclcpp::PARAMETER_DOUBLE_ARRAY>("MeasurementNoiseCov_matrix");
-  nM_ = this->declare_parameter<rclcpp::PARAMETER_DOUBLE_ARRAY>("MeasurementNoiseCov_matrix");
+  sdM_ = this->declare_parameter<std::vector<double>>("ProcessDisturbanceCov_matrix");
+  snM_ = this->declare_parameter<std::vector<double>>("MeasurementNoiseCov_matrix");
+  p0M_ = this->declare_parameter<std::vector<double>>("InitialStateCov_matrix");
+  nM_ = this->declare_parameter<std::vector<double>>("N_matrix");
 
   // Initialize Controller
   if (gaussian_)
   {
-    this->controller_ = LqgControl(XDoF_, UDoF_, YDoF_, discretize_, u_fb_, dt_,
+    this->controller_ = control::LqgControl(XDoF_, UDoF_, YDoF_, discretize_, u_fb_, dt_,
                                   aM_, bM_, cM_, dM_, qM_, rM_, sdM_, snM_, p0M_, nM_);
   } else {
-    this->controller_ = LqrControl(XDoF_, UDoF_, YDoF_, discretize_, u_fb_, dt_,
+    this->controller_ = control::LqgControl(XDoF_, UDoF_, YDoF_, discretize_, u_fb_, dt_,
                                   aM_, bM_, cM_, dM_, qM_, rM_, nM_);
   }
 
@@ -65,19 +67,19 @@ LqgControlNode::LqgControlNode(const rclcpp::NodeOptions& options) : Node("LqgCo
 
   this->registerStateSpaceIO();
   // Debug Publisher
-  this->pubStateErr_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("state_error", 10);
+  this->pubStateErrVect_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("state_error", 10);
 }
 
 void LqgControlNode::registerStateSpaceIO(){
   // generic publishers
-  this->pubCmd_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("command_vector", 10);
+  this->pubCmdVect_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("command_vector", 10);
   // generic subscribers
-  this->subMeas_ = this->create_subscription<std_msgs::msg::Float64MultiArray>(
-    "measurements", qos, std::bind(&updateMeasurement, this, std::placeholders::_1));
-  this->subCov_ = this->create_subscription<std_msgs::msg::Float64MultiArray>(
-    "measurements_cov", qos, std::bind(&updateMeasurementCov, this, std::placeholders::_1));
-  this->subDes_ = this->create_subscription<std_msgs::msg::Float64MultiArray>(
-    "desired_states", qos, std::bind(&updateDesiredState, this, std::placeholders::_1));
+  this->subMeasVect_ = this->create_subscription<std_msgs::msg::Float64MultiArray>(
+    "measurements", *qos_, std::bind(&updateMeasurement, this, std::placeholders::_1));
+  this->subCovMat_ = this->create_subscription<std_msgs::msg::Float64MultiArray>(
+    "measurements_cov", *qos_, std::bind(&updateMeasurementCov, this, std::placeholders::_1));
+  this->subDesVect_ = this->create_subscription<std_msgs::msg::Float64MultiArray>(
+    "desired_states", *qos_, std::bind(&updateDesiredState, this, std::placeholders::_1));
 }
 
 rcl_interfaces::msg::SetParametersResult LqgControlNode::paramUpdateCallback(const std::vector<rclcpp::Parameter> &parameters){
@@ -152,7 +154,7 @@ void LqgControlNode::publishCommand()
     this->commandVector.data.push_back( u(i) );
   }
   // publish message
-  this->pubCmd_->publish(this->commandVector);
+  this->pubCmdVect_->publish(this->commandVector);
 }
 
 void LqgControlNode::publishDebugSignals()
@@ -166,7 +168,7 @@ void LqgControlNode::publishDebugSignals()
   {
     this->stateError.data.push_back( err(i) );
   }
-  this->pubStateErr_->publish(this->stateError);
+  this->pubStateErrVect_->publish(this->stateError);
 }
 
 }// end namespace control
