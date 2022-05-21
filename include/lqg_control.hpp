@@ -84,21 +84,23 @@ class LqgControl
 
     inline std::pair<Eigen::VectorXd, Eigen::MatrixXd> getPrediction();
     
-    inline void updateMeasurement(const std_msgs::msg::Float64MultiArray::SharedPtr msg);
+    void updateMeasurement(const std_msgs::msg::Float64MultiArray::SharedPtr msg);
 
-    inline void updateMeasurement(Eigen::VectorXd& Y);
+    void updateMeasurement(Eigen::VectorXd& Y);
 
-    inline void updateMeasurementCov(const std_msgs::msg::Float64MultiArray::SharedPtr msg);
+    void updateMeasurementCov(const std_msgs::msg::Float64MultiArray::SharedPtr msg);
 
-    inline void updateMeasurementCov(Eigen::MatrixXd& cov);
+    void updateMeasurementCov(Eigen::MatrixXd& cov);
 
     inline Eigen::VectorXd getDesiredState() { return this->X_des_; };
 
-    inline void updateDesiredState(const std_msgs::msg::Float64MultiArray::SharedPtr msg);
+    inline Eigen::VectorXd currentError() { return this->optimal_controller.CurrentError(); };
 
-    inline void updateDesiredState(Eigen::VectorXd& X_des);
+    void updateDesiredState(const std_msgs::msg::Float64MultiArray::SharedPtr msg);
 
-    inline void controlCallback(const rclcpp::Logger& logger);
+    void updateDesiredState(Eigen::VectorXd& X_des);
+
+    void controlCallback(const rclcpp::Logger& logger);
 
   protected:
     Eigen::MatrixXd A_;
@@ -117,7 +119,7 @@ class LqgControl
 
     bool discretize_, u_feedback_, predicted_;
     double state_timeout_, dt_;
-    int XDoF_, UDoF_, YDoF_;
+    size_t XDoF_, UDoF_, YDoF_;
 
     control::dLQR optimal_controller;
     Eigen::MatrixXd sigmaMeasurements_;

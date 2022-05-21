@@ -75,30 +75,32 @@ void LqgControlNode::registerStateSpaceIO(){
   this->pubCmdVect_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("command_vector", 10);
   // generic subscribers
   this->subMeasVect_ = this->create_subscription<std_msgs::msg::Float64MultiArray>(
-    "measurements", *qos_, std::bind(&updateMeasurement, this, std::placeholders::_1));
+    "measurements", *qos_, std::bind(&LqgControlNode::updateMeasurement, this, std::placeholders::_1));
   this->subCovMat_ = this->create_subscription<std_msgs::msg::Float64MultiArray>(
-    "measurements_cov", *qos_, std::bind(&updateMeasurementCov, this, std::placeholders::_1));
+    "measurements_cov", *qos_, std::bind(&LqgControlNode::updateMeasurementCov, this, std::placeholders::_1));
   this->subDesVect_ = this->create_subscription<std_msgs::msg::Float64MultiArray>(
-    "desired_states", *qos_, std::bind(&updateDesiredState, this, std::placeholders::_1));
+    "desired_states", *qos_, std::bind(&LqgControlNode::updateDesiredState, this, std::placeholders::_1));
 }
 
-rcl_interfaces::msg::SetParametersResult LqgControlNode::paramUpdateCallback(const std::vector<rclcpp::Parameter> &parameters){
+rcl_interfaces::msg::SetParametersResult
+  LqgControlNode::paramUpdateCallback(const std::vector<rclcpp::Parameter> &parameters)
+{
   //this->auto_enabled_ = this->get_parameter("auto_enabled").as_bool();
   //TODO: what else needs to be dynamically updated?
-  bool updateSystem = false;
+  //bool updateSystem = false;
   bool updateController = false;
-  double tmp = 0.;
+  //double tmp = 0.;
 
   // cycle through the list of set parameters and update temporarily-stored parameter table.
   for (const auto &param: parameters)
   {
-    switch (param.get_name()){
+    switch (paramMap_[param.get_name()]){
 
-      case "mute":
+      case MUTE:
         this->mute_ = param.as_bool();
         break;
 
-      case "debug":
+      case DEBUG:
         this->debug_ = param.as_bool();
         break;
 
@@ -112,7 +114,8 @@ rcl_interfaces::msg::SetParametersResult LqgControlNode::paramUpdateCallback(con
   // If the format consistency is met, we automatically update the controller.
 
   if (updateController){
-    buildLinearizedSystem();
+    // TODO: need to refresh the system matrices
+    //buildLinearizedSystem();
   }
 
   // reply to the ROS2 parameter call.
@@ -146,10 +149,10 @@ void LqgControlNode::controlCallback()
 
 void LqgControlNode::publishCommand()
 {
-  Eigen::VectorXd& u = this->controller_.getControl();
+  Eigen::VectorXd u = this->controller_.getControl();
   // unpack Eigen::Vector into Float64 array message
   this->commandVector.data.clear();
-  for (size_t i = 0; i < u.size(); i ++)
+  for (size_t i = 0; i < (size_t)(u.size()); i ++)
   {
     this->commandVector.data.push_back( u(i) );
   }
@@ -162,9 +165,9 @@ void LqgControlNode::publishDebugSignals()
   //pubLookaheadError_->publish(this->lookahead_error);
   //pubLatError_->publish(this->lat_error);
   //pubCurvature_->publish(this->curvature);
-  Eigen::VectorXd err = this->controller_.CurrentError();
+  Eigen::VectorXd err = this->controller_.currentError();
   this->stateError.data.clear();
-  for (size_t i = 0; i < err.size(); i ++)
+  for (size_t i = 0; i < (size_t)(err.size()); i ++)
   {
     this->stateError.data.push_back( err(i) );
   }

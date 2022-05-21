@@ -23,6 +23,7 @@
 #include <math.h>
 #include <utility>
 #include <vector>
+#include <map>
 #include <eigen3/Eigen/Dense>
 
 #include "rclcpp/rclcpp.hpp"
@@ -64,6 +65,8 @@ class LqgControlNode : public rclcpp::Node
 
     void publishDebugSignals();
 
+    rcl_interfaces::msg::SetParametersResult paramUpdateCallback(const std::vector<rclcpp::Parameter> &parameters);
+
     bool mute_, debug_, gaussian_, discretize_, u_fb_;
 
     double dt_;
@@ -75,10 +78,22 @@ class LqgControlNode : public rclcpp::Node
 
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr pubCmdVect_, pubStateErrVect_;
     rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr subMeasVect_, subCovMat_, subDesVect_;
+    rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr paramUpdate_handle_;
 
     int XDoF_, UDoF_, YDoF_;
 
     std::vector<double> aM_, bM_, cM_, dM_, qM_, rM_, sdM_, snM_, p0M_, nM_;
+  
+  private:
+    enum params{
+      MUTE,
+      DEBUG
+    };
+    std::map<std::string, params> paramMap_={
+      {"mute", MUTE},
+      {"debug", DEBUG}
+    };
+
 }; // end of class
 
 } // end of namespace

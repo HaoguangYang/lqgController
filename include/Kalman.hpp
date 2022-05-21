@@ -84,8 +84,8 @@ namespace control
 
     inline void setMeasurementNoiseCov(Eigen::MatrixXd& R) { this->R = R; };
 
-    inline std::pair<Eigen::VectorXd, Eigen::MatrixXd> predict(const Eigen::VectorXd& u);
-    inline std::pair<Eigen::VectorXd, Eigen::MatrixXd> predict();
+    std::pair<Eigen::VectorXd, Eigen::MatrixXd> predict(const Eigen::VectorXd& u);
+    std::pair<Eigen::VectorXd, Eigen::MatrixXd> predict();
 
     /**
     * Update the estimated state based on measured values. The
@@ -94,27 +94,27 @@ namespace control
     inline void update(const Eigen::VectorXd& y, const Eigen::VectorXd& u);
     inline void update(const Eigen::VectorXd& y);
 
-    inline void updateNoCov(const Eigen::VectorXd& y);
+    void updateNoCov(const Eigen::VectorXd& y);
 
     /**
     * Update the estimated state based on measured values,
     * using the given time step and dynamics matrix.
     */
-    inline void update_time_variant_A(const Eigen::VectorXd& y, const Eigen::VectorXd& u, const Eigen::MatrixXd& A);
-    inline void update_time_variant_A(const Eigen::VectorXd& y, const Eigen::VectorXd& u, const Eigen::MatrixXd& A, double dt);
-    inline void update_time_variant_A(const Eigen::VectorXd& y, const Eigen::MatrixXd& A);
-    inline void update_time_variant_A(const Eigen::VectorXd& y, const Eigen::MatrixXd& A, double dt);
-    inline void update_time_variant_R(const Eigen::VectorXd& y, const Eigen::VectorXd& u, const Eigen::MatrixXd& R);
-    inline void update_time_variant_R(const Eigen::VectorXd& y, const Eigen::VectorXd& u, const Eigen::MatrixXd& R, double dt);
-    inline void update_time_variant_R(const Eigen::VectorXd& y, const Eigen::MatrixXd& R);
-    inline void update_time_variant_R(const Eigen::VectorXd& y, const Eigen::MatrixXd& R, double dt);
-    inline void update_time_variant_both_A_and_R
+    void update_time_variant_A(const Eigen::VectorXd& y, const Eigen::VectorXd& u, const Eigen::MatrixXd& A);
+    void update_time_variant_A(const Eigen::VectorXd& y, const Eigen::VectorXd& u, const Eigen::MatrixXd& A, double dt);
+    void update_time_variant_A(const Eigen::VectorXd& y, const Eigen::MatrixXd& A);
+    void update_time_variant_A(const Eigen::VectorXd& y, const Eigen::MatrixXd& A, double dt);
+    void update_time_variant_R(const Eigen::VectorXd& y, const Eigen::VectorXd& u, const Eigen::MatrixXd& R);
+    void update_time_variant_R(const Eigen::VectorXd& y, const Eigen::VectorXd& u, const Eigen::MatrixXd& R, double dt);
+    void update_time_variant_R(const Eigen::VectorXd& y, const Eigen::MatrixXd& R);
+    void update_time_variant_R(const Eigen::VectorXd& y, const Eigen::MatrixXd& R, double dt);
+    void update_time_variant_both_A_and_R
       (const Eigen::VectorXd& y, const Eigen::VectorXd& u, const Eigen::MatrixXd& A, const Eigen::MatrixXd& R);
-    inline void update_time_variant_both_A_and_R
+    void update_time_variant_both_A_and_R
       (const Eigen::VectorXd& y, const Eigen::VectorXd& u, const Eigen::MatrixXd& A, const Eigen::MatrixXd& R, double dt);
-    inline void update_time_variant_both_A_and_R
+    void update_time_variant_both_A_and_R
       (const Eigen::VectorXd& y, const Eigen::MatrixXd& A, const Eigen::MatrixXd& R);
-    inline void update_time_variant_both_A_and_R
+    void update_time_variant_both_A_and_R
       (const Eigen::VectorXd& y, const Eigen::MatrixXd& A, const Eigen::MatrixXd& R, double dt);
 
     /**
