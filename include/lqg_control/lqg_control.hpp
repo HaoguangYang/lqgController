@@ -37,12 +37,20 @@ class LqgControl
   public:
     LqgControl() { this->_mtx = new std::mutex(); };
 
+    /// @brief Constructor using system x[n+1]=Ax[n]+Bu[n]; y[n]=Cx[n]+Du[n], with t[n+1]-t[n]=dt.
+    /// @param[in] A specifies the discrete-time state space equation.
+    /// @param[in] B specifies the discrete-time state space equation.
+    /// @param[in] C specifies the discrete-time state space equation.
+    /// @param[in] D specifies the discrete-time state space equation.
+    /// @param[in] Q specifies the state space error penalty.
+    /// @param[in] R specifies the control effort penalty.
     LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
                 bool& discretize, bool& u_feedback, double& dt,
                 std::vector<double>& A, std::vector<double>& B,
                 std::vector<double>& C, std::vector<double>& D,
                 std::vector<double>& Q, std::vector<double>& R);
 
+    /// @param[in] N specifies the error-effort cross penalty. [NOT YET IMPLEMENTED]
     LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
                 bool& discretize, bool& u_feedback, double& dt,
                 std::vector<double>& A, std::vector<double>& B,
@@ -50,6 +58,8 @@ class LqgControl
                 std::vector<double>& Q, std::vector<double>& R,
                 std::vector<double>& N);
 
+    /// @param[in] Sd Covariance of disturbance matrix. The input combinations without 
+    /// @param[in] Sn Covariance of noise matrix
     LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
                 bool& discretize, bool& u_feedback, double& dt,
                 std::vector<double>& A, std::vector<double>& B,
@@ -57,6 +67,7 @@ class LqgControl
                 std::vector<double>& Q, std::vector<double>& R,
                 std::vector<double>& Sd, std::vector<double>& Sn);
 
+    /// @param[in] P0 Initial state covariance matrix
     LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
                 bool& discretize, bool& u_feedback, double& dt,
                 std::vector<double>& A, std::vector<double>& B,
@@ -74,7 +85,22 @@ class LqgControl
                 std::vector<double>& Sd, std::vector<double>& Sn,
                 std::vector<double>& P0);
 
+    void initializeCovariances(std::vector<double>& Sd, std::vector<double>& Sn);
+
+    void initializeCovariances(std::vector<double>& Sd, std::vector<double>& Sn,
+                              std::vector<double>& P0);
+
+    void initializeStates(std::vector<double>& X0);
+
+    void initializeStates(const Eigen::VectorXd& X0);
+
+    void initializeStates(std::vector<double>& X0, std::vector<double>& P0);
+
+    inline int vectorPack(std::vector<double>& in, Eigen::VectorXd& out);
+
     inline int matrixPack(std::vector<double>& in, Eigen::MatrixXd& out);
+
+    inline int matrixUnpack(const Eigen::MatrixXd& in, std::vector<double>& out);
 
     inline void setCmdToZeros();
 
@@ -118,7 +144,7 @@ class LqgControl
     rclcpp::Time state_update_time_, last_control_time_;
 
     bool discretize_, u_feedback_, predicted_;
-    double state_timeout_, dt_;
+    double dt_;
     size_t XDoF_, UDoF_, YDoF_;
 
     control::dLQR optimal_controller;

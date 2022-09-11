@@ -58,8 +58,7 @@ namespace control
     /// @param[in] B specifies the discrete-time state space equation.
     /// @param[in] Q specifies the state space error penalty.
     /// @param[in] R specifies the control effort penalty.
-    /// @param[in] N specifies the error-effort cross penalty.
-    /// @param[in] dt specifies the control interval.
+    /// @param[in] N specifies the error-effort cross penalty. [NOT YET IMPLEMENTED]
     dLQR(const Eigen::MatrixXd& A,
          const Eigen::MatrixXd& B,
          const Eigen::MatrixXd& Q,

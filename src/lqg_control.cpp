@@ -150,18 +150,76 @@ void LqgControl::_LqgControlFull_(const int& XDoF, const int& UDoF, const int& Y
 {
   LqgControl::_LqrControlFull_(XDoF, UDoF, YDoF, discretize, u_feedback, dt,
                                 A, B, C, D, Q, R, N);
-  if (Sd.size()!=XDoF*XDoF)
+  this->initializeCovariances(Sd, Sn, P0);
+}
+
+void LqgControl::initializeCovariances(std::vector<double>& Sd, std::vector<double>& Sn)
+{
+  std::vector<double> smallP0Matrix(XDoF_*XDoF_, 1e-12);
+  this->initializeCovariances(Sd, Sn, smallP0Matrix);
+}
+
+void LqgControl::initializeCovariances(std::vector<double>& Sd, std::vector<double>& Sn,
+                                      std::vector<double>& P0)
+{
+  if (Sd.size()!=XDoF_*XDoF_)
     throw std::runtime_error("Disturbance covariance matrix Sd is ill-formed!");
-  if (Sn.size()!=YDoF*YDoF)
+  if (Sn.size()!=YDoF_*YDoF_)
     throw std::runtime_error("Measurement covariance matrix Sn is ill-formed!");
   matrixPack(Sd, this->sigmaDisturbance_);
   matrixPack(Sn, this->sigmaMeasurements_);
   Eigen::MatrixXd stateCov;
-  stateCov = Eigen::MatrixXd::Zero(XDoF, XDoF);
+  stateCov = Eigen::MatrixXd::Zero(XDoF_, XDoF_);
+  // If the initial state covariance is mal-formed, it will be ignored.
   matrixPack(P0, stateCov);
   
-  this->optimal_state_estimate = KalmanFilter(dt, this->A_, this->B_, this->C_, 
+  this->optimal_state_estimate = KalmanFilter(dt_, this->A_, this->B_, this->C_, 
                                   this->sigmaDisturbance_, this->sigmaMeasurements_, stateCov);
+}
+
+void LqgControl::initializeStates(std::vector<double>& X0)
+{
+  rclcpp::Time tNow = rclcpp::Clock().now();
+  Eigen::VectorXd x0_;
+  x0_ = Eigen::VectorXd::Zero(XDoF_);
+  vectorPack(X0, x0_);
+  this->optimal_state_estimate.init(
+    static_cast<double>(tNow.seconds())+
+    static_cast<double>(tNow.nanoseconds())*1.e-9,
+    x0_);
+}
+
+void LqgControl::initializeStates(const Eigen::VectorXd& X0)
+{
+  rclcpp::Time tNow = rclcpp::Clock().now();
+  this->optimal_state_estimate.init(
+    static_cast<double>(tNow.seconds())+
+    static_cast<double>(tNow.nanoseconds())*1.e-9,
+    X0);
+}
+
+void LqgControl::initializeStates(std::vector<double>& X0, std::vector<double>& P0)
+{
+  rclcpp::Time tNow = rclcpp::Clock().now();
+  Eigen::VectorXd x0_;
+  x0_ = Eigen::VectorXd::Zero(XDoF_);
+  vectorPack(X0, x0_);
+  Eigen::MatrixXd stateCov;
+  stateCov = Eigen::MatrixXd::Zero(XDoF_, XDoF_);
+  matrixPack(P0, stateCov);
+  this->optimal_state_estimate.init(
+    static_cast<double>(tNow.seconds())+
+    static_cast<double>(tNow.nanoseconds())*1.e-9,
+    x0_, stateCov);
+}
+
+int LqgControl::vectorPack(std::vector<double>& in, Eigen::VectorXd& out)
+{
+  // conversion from std types to Eigen types
+  if ((size_t)(out.size()) != in.size())
+    return -1;
+  out = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(in.data(), in.size());
+  return 0;
 }
 
 int LqgControl::matrixPack(std::vector<double>& in, Eigen::MatrixXd& out)
@@ -175,6 +233,23 @@ int LqgControl::matrixPack(std::vector<double>& in, Eigen::MatrixXd& out)
     for (size_t j = 0; j < (size_t)(out.cols()); j++)
     {
       out(i,j) = in[ind];
+      ind ++;
+    }
+  }
+  return 0;
+}
+
+int LqgControl::matrixUnpack(const Eigen::MatrixXd& in, std::vector<double>& out)
+{
+  // conversion from std types to Eigen types
+  if ((size_t)(out.size()) != static_cast<long unsigned int>(in.size()))
+    return -1;
+  size_t ind = 0;
+  for (size_t i = 0; i < (size_t)(in.rows()); i++)
+  {
+    for (size_t j = 0; j < (size_t)(in.cols()); j++)
+    {
+      out[ind] = in(i,j);
       ind ++;
     }
   }
@@ -300,27 +375,22 @@ void LqgControl::controlCallback(const rclcpp::Logger& logger)
               static_cast<double>(time_diff.nanoseconds())*1e-9;
   time_diff = control_time - this->last_control_time_;
   double control_dt = static_cast<double>(time_diff.seconds()) +
-              static_cast<double>(time_diff.nanoseconds())*1e-9;
+              static_cast<double>(time_diff.nanoseconds())*1.e-9;
   this->last_control_time_ = control_time;
 
   if ( !this->optimal_state_estimate.isInitialized() )
   {
     this->setCmdToZeros();
-    // TODO: initialize systems and controls
-    /*
-    RCLCPP_DEBUG(logger, "Controller waiting for sensor messages to initialize...\n");
-    initializeSystemAndControls();
-    if (this->optimal_state_estimate.isInitialized() )
-      RCLCPP_DEBUG(logger, "Controller State Estimator Initialized!\n");
-    */
+    rclcpp::Clock clock;
+    RCLCPP_WARN_THROTTLE(logger, clock, 1, "Controller still waiting for initial state to initialize...\n");
     return;
   }
 
-  if ( state_dt >= this->state_timeout_ ){
+  if ( state_dt >= this->dt_ ){
     this->setCmdToZeros();
-    RCLCPP_DEBUG(logger,
+    RCLCPP_WARN(logger,
                     "State observation age: %f seconds is too stale! (timeout = %f s)\n",
-                    state_dt, this->state_timeout_);
+                    state_dt, this->dt_);
     return;
   }
 
