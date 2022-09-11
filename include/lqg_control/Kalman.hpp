@@ -6,6 +6,8 @@
  *
  * @author: Hayk Martirosyan
  * @date: 2014.11.15
+ * @author: Haoguang Yang
+ * @date: 2021.10.01
  */
 
 #ifndef _KALMAN_FILTER_H_

@@ -28,7 +28,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/float64_multi_array.hpp"
-#include "lqg_control.hpp"
+#include "lqg_control/lqg_control.hpp"
 
 namespace control
 {

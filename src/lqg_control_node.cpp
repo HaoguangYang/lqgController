@@ -13,7 +13,7 @@
    limitations under the License. 
 */
 
-#include <lqg_control_node.hpp>
+#include "lqg_control/lqg_control_node.hpp"
 
 namespace control
 {

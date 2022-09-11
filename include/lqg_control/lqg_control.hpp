@@ -26,8 +26,8 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/float64_multi_array.hpp"
-#include "LQR.hpp"
-#include "Kalman.hpp"
+#include "lqg_control/LQR.hpp"
+#include "lqg_control/Kalman.hpp"
 
 namespace control
 {

@@ -40,7 +40,7 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "Kalman.hpp"
+#include "lqg_control/Kalman.hpp"
 
 namespace control
 {

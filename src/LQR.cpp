@@ -36,7 +36,7 @@
 #include <algorithm>
 #include <iostream>
 
-#include "LQR.hpp"
+#include "lqg_control/LQR.hpp"
 
 namespace control
 {
