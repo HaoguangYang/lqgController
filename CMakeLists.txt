@@ -13,11 +13,12 @@ endif()
 
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -pipe")
 
-#if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-#  add_compile_options(-Wall -Wextra -Wpedantic -march=native)
-#endif()
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 
 set(TARGET_NAME ${PROJECT_NAME}_node)
+set(TARGET_LIB_NAME ${PROJECT_NAME}_lib)
 
 # find dependencies
 find_package(ament_cmake_auto REQUIRED)
@@ -29,12 +30,14 @@ ament_auto_find_build_dependencies()
 ament_auto_generate_code()
 
 # setup targets
-#ament_auto_add_library(foo_lib src/lib.cpp)
-ament_auto_add_executable(${TARGET_NAME}
-  src/lqg_control_node.cpp
+ament_auto_add_library(${TARGET_LIB_NAME}
   src/Kalman.cpp
   src/LQR.cpp
   src/lqg_control.cpp
+)
+
+ament_auto_add_executable(${TARGET_NAME}
+  src/lqg_control_node.cpp
 )
 
 #target_link_libraries(${TARGET_NAME} ${ARMADILLO_LIBRARIES})
