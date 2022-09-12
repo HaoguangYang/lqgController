@@ -302,6 +302,8 @@ class LqgControl
 
     inline const Eigen::VectorXd& currentError() { return this->optimal_controller.CurrentError(); };
 
+    inline bool gaussianEstimatorInitialized() { return this->optimal_state_estimate.isInitialized(); };
+
     void updateDesiredState(const std_msgs::msg::Float64MultiArray::SharedPtr msg);
 
     void updateDesiredState(Eigen::VectorXd& X_des);
