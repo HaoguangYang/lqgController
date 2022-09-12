@@ -37,11 +37,13 @@ class LqgControl
   public:
     LqgControl() { this->_mtx = new std::mutex(); };
 
+    //std::vector version
+
     /// @brief Constructor using system x[n+1]=Ax[n]+Bu[n]; y[n]=Cx[n]+Du[n], with t[n+1]-t[n]=dt.
     /// @param[in] A specifies the discrete-time state space equation.
     /// @param[in] B specifies the discrete-time state space equation.
     /// @param[in] C specifies the discrete-time state space equation.
-    /// @param[in] D specifies the discrete-time state space equation.
+    /// @param[in] D specifies the discrete-time state space equation. [NOT YET IMPLEMENTED]
     /// @param[in] Q specifies the state space error penalty.
     /// @param[in] R specifies the control effort penalty.
     LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
@@ -50,6 +52,13 @@ class LqgControl
                 std::vector<double>& C, std::vector<double>& D,
                 std::vector<double>& Q, std::vector<double>& R);
 
+    /// @brief Constructor using system x[n+1]=Ax[n]+Bu[n]; y[n]=Cx[n]+Du[n], with t[n+1]-t[n]=dt.
+    /// @param[in] A specifies the discrete-time state space equation.
+    /// @param[in] B specifies the discrete-time state space equation.
+    /// @param[in] C specifies the discrete-time state space equation.
+    /// @param[in] D specifies the discrete-time state space equation. [NOT YET IMPLEMENTED]
+    /// @param[in] Q specifies the state space error penalty.
+    /// @param[in] R specifies the control effort penalty.
     /// @param[in] N specifies the error-effort cross penalty. [NOT YET IMPLEMENTED]
     LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
                 bool& discretize, bool& u_feedback, double& dt,
@@ -58,6 +67,13 @@ class LqgControl
                 std::vector<double>& Q, std::vector<double>& R,
                 std::vector<double>& N);
 
+    /// @brief Constructor using system x[n+1]=Ax[n]+Bu[n]; y[n]=Cx[n]+Du[n], with t[n+1]-t[n]=dt.
+    /// @param[in] A specifies the discrete-time state space equation.
+    /// @param[in] B specifies the discrete-time state space equation.
+    /// @param[in] C specifies the discrete-time state space equation.
+    /// @param[in] D specifies the discrete-time state space equation. [NOT YET IMPLEMENTED]
+    /// @param[in] Q specifies the state space error penalty.
+    /// @param[in] R specifies the control effort penalty.
     /// @param[in] Sd Covariance of disturbance matrix. The input combinations without 
     /// @param[in] Sn Covariance of noise matrix
     LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
@@ -67,6 +83,15 @@ class LqgControl
                 std::vector<double>& Q, std::vector<double>& R,
                 std::vector<double>& Sd, std::vector<double>& Sn);
 
+    /// @brief Constructor using system x[n+1]=Ax[n]+Bu[n]; y[n]=Cx[n]+Du[n], with t[n+1]-t[n]=dt.
+    /// @param[in] A specifies the discrete-time state space equation.
+    /// @param[in] B specifies the discrete-time state space equation.
+    /// @param[in] C specifies the discrete-time state space equation.
+    /// @param[in] D specifies the discrete-time state space equation. [NOT YET IMPLEMENTED]
+    /// @param[in] Q specifies the state space error penalty.
+    /// @param[in] R specifies the control effort penalty.
+    /// @param[in] Sd Covariance of disturbance matrix. The input combinations without 
+    /// @param[in] Sn Covariance of noise matrix
     /// @param[in] P0 Initial state covariance matrix
     LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
                 bool& discretize, bool& u_feedback, double& dt,
@@ -76,6 +101,17 @@ class LqgControl
                 std::vector<double>& Sd, std::vector<double>& Sn,
                 std::vector<double>& P0);
 
+    /// @brief Constructor using system x[n+1]=Ax[n]+Bu[n]; y[n]=Cx[n]+Du[n], with t[n+1]-t[n]=dt.
+    /// @param[in] A specifies the discrete-time state space equation.
+    /// @param[in] B specifies the discrete-time state space equation.
+    /// @param[in] C specifies the discrete-time state space equation.
+    /// @param[in] D specifies the discrete-time state space equation. [NOT YET IMPLEMENTED]
+    /// @param[in] Q specifies the state space error penalty.
+    /// @param[in] R specifies the control effort penalty.
+    /// @param[in] N specifies the error-effort cross penalty. [NOT YET IMPLEMENTED]
+    /// @param[in] Sd Covariance of disturbance matrix. The input combinations without 
+    /// @param[in] Sn Covariance of noise matrix
+    /// @param[in] P0 Initial state covariance matrix
     LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
                 bool& discretize, bool& u_feedback, double& dt,
                 std::vector<double>& A, std::vector<double>& B,
@@ -85,10 +121,99 @@ class LqgControl
                 std::vector<double>& Sd, std::vector<double>& Sn,
                 std::vector<double>& P0);
 
+    //Eigen::MatrixXd version
+
+    /// @brief Constructor using system x[n+1]=Ax[n]+Bu[n]; y[n]=Cx[n]+Du[n], with t[n+1]-t[n]=dt.
+    /// @param[in] A specifies the discrete-time state space equation.
+    /// @param[in] B specifies the discrete-time state space equation.
+    /// @param[in] C specifies the discrete-time state space equation.
+    /// @param[in] D specifies the discrete-time state space equation. [NOT YET IMPLEMENTED]
+    /// @param[in] Q specifies the state space error penalty.
+    /// @param[in] R specifies the control effort penalty.
+    LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
+                bool& discretize, bool& u_feedback, double& dt,
+                const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
+                const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
+                const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R);
+
+    /// @brief Constructor using system x[n+1]=Ax[n]+Bu[n]; y[n]=Cx[n]+Du[n], with t[n+1]-t[n]=dt.
+    /// @param[in] A specifies the discrete-time state space equation.
+    /// @param[in] B specifies the discrete-time state space equation.
+    /// @param[in] C specifies the discrete-time state space equation.
+    /// @param[in] D specifies the discrete-time state space equation. [NOT YET IMPLEMENTED]
+    /// @param[in] Q specifies the state space error penalty.
+    /// @param[in] R specifies the control effort penalty.
+    /// @param[in] N specifies the error-effort cross penalty. [NOT YET IMPLEMENTED]
+    LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
+                bool& discretize, bool& u_feedback, double& dt,
+                const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
+                const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
+                const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R,
+                const Eigen::MatrixXd& N);
+
+    /// @brief Constructor using system x[n+1]=Ax[n]+Bu[n]; y[n]=Cx[n]+Du[n], with t[n+1]-t[n]=dt.
+    /// @param[in] A specifies the discrete-time state space equation.
+    /// @param[in] B specifies the discrete-time state space equation.
+    /// @param[in] C specifies the discrete-time state space equation.
+    /// @param[in] D specifies the discrete-time state space equation. [NOT YET IMPLEMENTED]
+    /// @param[in] Q specifies the state space error penalty.
+    /// @param[in] R specifies the control effort penalty.
+    /// @param[in] Sd Covariance of disturbance matrix. The input combinations without 
+    /// @param[in] Sn Covariance of noise matrix
+    LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
+                bool& discretize, bool& u_feedback, double& dt,
+                const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
+                const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
+                const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R,
+                const Eigen::MatrixXd& Sd, const Eigen::MatrixXd& Sn);
+
+    /// @brief Constructor using system x[n+1]=Ax[n]+Bu[n]; y[n]=Cx[n]+Du[n], with t[n+1]-t[n]=dt.
+    /// @param[in] A specifies the discrete-time state space equation.
+    /// @param[in] B specifies the discrete-time state space equation.
+    /// @param[in] C specifies the discrete-time state space equation.
+    /// @param[in] D specifies the discrete-time state space equation. [NOT YET IMPLEMENTED]
+    /// @param[in] Q specifies the state space error penalty.
+    /// @param[in] R specifies the control effort penalty.
+    /// @param[in] Sd Covariance of disturbance matrix. The input combinations without 
+    /// @param[in] Sn Covariance of noise matrix
+    /// @param[in] P0 Initial state covariance matrix
+    LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
+                bool& discretize, bool& u_feedback, double& dt,
+                const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
+                const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
+                const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R,
+                const Eigen::MatrixXd& Sd, const Eigen::MatrixXd& Sn,
+                const Eigen::MatrixXd& P0);
+
+    /// @brief Constructor using system x[n+1]=Ax[n]+Bu[n]; y[n]=Cx[n]+Du[n], with t[n+1]-t[n]=dt.
+    /// @param[in] A specifies the discrete-time state space equation.
+    /// @param[in] B specifies the discrete-time state space equation.
+    /// @param[in] C specifies the discrete-time state space equation.
+    /// @param[in] D specifies the discrete-time state space equation. [NOT YET IMPLEMENTED]
+    /// @param[in] Q specifies the state space error penalty.
+    /// @param[in] R specifies the control effort penalty.
+    /// @param[in] N specifies the error-effort cross penalty. [NOT YET IMPLEMENTED]
+    /// @param[in] Sd Covariance of disturbance matrix. The input combinations without 
+    /// @param[in] Sn Covariance of noise matrix
+    /// @param[in] P0 Initial state covariance matrix
+    LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
+                bool& discretize, bool& u_feedback, double& dt,
+                const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
+                const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
+                const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R,
+                const Eigen::MatrixXd& N,
+                const Eigen::MatrixXd& Sd, const Eigen::MatrixXd& Sn,
+                const Eigen::MatrixXd& P0);
+
     void initializeCovariances(std::vector<double>& Sd, std::vector<double>& Sn);
 
     void initializeCovariances(std::vector<double>& Sd, std::vector<double>& Sn,
                               std::vector<double>& P0);
+
+    void initializeCovariances(const Eigen::MatrixXd& Sd, const Eigen::MatrixXd& Sn);
+
+    void initializeCovariances(const Eigen::MatrixXd& Sd, const Eigen::MatrixXd& Sn,
+                              const Eigen::MatrixXd& P0);
 
     void initializeStates(std::vector<double>& X0);
 
@@ -96,19 +221,74 @@ class LqgControl
 
     void initializeStates(std::vector<double>& X0, std::vector<double>& P0);
 
-    inline int vectorPack(std::vector<double>& in, Eigen::VectorXd& out);
+    void initializeStates(const Eigen::VectorXd& X0, const Eigen::MatrixXd& P0);
 
-    inline int matrixPack(std::vector<double>& in, Eigen::MatrixXd& out);
+    inline int vectorPack(std::vector<double>& in, Eigen::VectorXd& out) {
+      // conversion from std types to Eigen types
+      if ((size_t)(out.size()) != in.size())
+        return -1;
+      out = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(in.data(), in.size());
+      return 0;
+    };
 
-    inline int matrixUnpack(const Eigen::MatrixXd& in, std::vector<double>& out);
+    inline int matrixPack(std::vector<double>& in, Eigen::MatrixXd& out){
+      // conversion from std types to Eigen types
+      if ((size_t)(out.size()) != in.size())
+        return -1;
+      size_t ind = 0;
+      for (size_t i = 0; i < (size_t)(out.rows()); i++)
+      {
+        for (size_t j = 0; j < (size_t)(out.cols()); j++)
+        {
+          out(i,j) = in[ind];
+          ind ++;
+        }
+      }
+      return 0;
+    };
 
-    inline void setCmdToZeros();
+    inline int matrixUnpack(const Eigen::MatrixXd& in, std::vector<double>& out){
+      // conversion from std types to Eigen types
+      if ((size_t)(out.size()) != static_cast<long unsigned int>(in.size()))
+        return -1;
+      size_t ind = 0;
+      for (size_t i = 0; i < (size_t)(in.rows()); i++)
+      {
+        for (size_t j = 0; j < (size_t)(in.cols()); j++)
+        {
+          out[ind] = in(i,j);
+          ind ++;
+        }
+      }
+      return 0;
+    };
 
-    inline Eigen::VectorXd getControl() { return this->U_; };
+    inline void setCmdToZeros() {
+      std::lock_guard<std::mutex> l(*_mtx);
+      this->U_.setZero();
+      if (!this->u_feedback_)
+        this->U_act_ = this->U_;
+    };
 
-    inline void updateActualControl(const Eigen::VectorXd& u);
+    inline const Eigen::MatrixXd& getStateFeedbackMatrix() { return this->optimal_controller.getK(); };
 
-    inline std::pair<Eigen::VectorXd, Eigen::MatrixXd> getPrediction();
+    inline const Eigen::VectorXd& getControl() { return this->U_; };
+
+    inline void updateActualControl(const Eigen::VectorXd& u) {
+      std::lock_guard<std::mutex> l(*_mtx);
+      if ((size_t)(u.size()) != this->UDoF_)
+        return;
+      this->U_act_ = u;
+    };
+
+    inline std::pair<Eigen::VectorXd, Eigen::MatrixXd> getPrediction() {
+      std::lock_guard<std::mutex> l(*_mtx);
+      if (this->predicted_)
+        return std::make_pair(this->Y_, this->sigmaMeasurements_);
+      this->predicted_ = true;
+      std::tie(this->Y_, this->sigmaMeasurements_) = this->optimal_state_estimate.predict(this->U_act_);
+      return std::make_pair(this->Y_, this->sigmaMeasurements_);
+    };
     
     void updateMeasurement(const std_msgs::msg::Float64MultiArray::SharedPtr msg);
 
@@ -118,9 +298,9 @@ class LqgControl
 
     void updateMeasurementCov(Eigen::MatrixXd& cov);
 
-    inline Eigen::VectorXd getDesiredState() { return this->X_des_; };
+    inline const Eigen::VectorXd& getDesiredState() { return this->X_des_; };
 
-    inline Eigen::VectorXd currentError() { return this->optimal_controller.CurrentError(); };
+    inline const Eigen::VectorXd& currentError() { return this->optimal_controller.CurrentError(); };
 
     void updateDesiredState(const std_msgs::msg::Float64MultiArray::SharedPtr msg);
 
@@ -169,6 +349,20 @@ class LqgControl
                 std::vector<double>& N,
                 std::vector<double>& Sd, std::vector<double>& Sn,
                 std::vector<double>& P0);
+    inline void _LqrControlFull_(const int& XDoF, const int& UDoF, const int& YDoF,
+                bool& discretize, bool& u_feedback, double& dt,
+                const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
+                const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
+                const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R,
+                const Eigen::MatrixXd& N);
+    inline void _LqgControlFull_(const int& XDoF, const int& UDoF, const int& YDoF,
+                bool& discretize, bool& u_feedback, double& dt,
+                const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
+                const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
+                const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R,
+                const Eigen::MatrixXd& N,
+                const Eigen::MatrixXd& Sd, const Eigen::MatrixXd& Sn,
+                const Eigen::MatrixXd& P0);
 }; // end of class
 
 } // end of namespace

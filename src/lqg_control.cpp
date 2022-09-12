@@ -78,6 +78,71 @@ LqgControl::LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
                                 A, B, C, D, Q, R, zeroNMatrix, Sd, Sn, smallP0Matrix);
 }
 
+LqgControl::LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
+                        bool& discretize, bool& u_feedback, double& dt,
+                        const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
+                        const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
+                        const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R,
+                        const Eigen::MatrixXd& N)
+{
+  LqgControl::_LqrControlFull_(XDoF, UDoF, YDoF, discretize, u_feedback, dt,
+                                A, B, C, D, Q, R, N);
+}
+
+LqgControl::LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
+                        bool& discretize, bool& u_feedback, double& dt,
+                        const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
+                        const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
+                        const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R,
+                        const Eigen::MatrixXd& N,
+                        const Eigen::MatrixXd& Sd, const Eigen::MatrixXd& Sn,
+                        const Eigen::MatrixXd& P0)
+{
+  LqgControl::_LqgControlFull_(XDoF, UDoF, YDoF, discretize, u_feedback, dt,
+                                A, B, C, D, Q, R, N, Sd, Sn, P0);
+}
+
+LqgControl::LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
+                        bool& discretize, bool& u_feedback, double& dt,
+                        const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
+                        const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
+                        const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R)
+{
+  Eigen::MatrixXd zeroNMatrix;
+  zeroNMatrix = Eigen::MatrixXd::Zero(XDoF,UDoF);
+  LqgControl::_LqrControlFull_(XDoF, UDoF, YDoF, discretize, u_feedback, dt,
+                                A, B, C, D, Q, R, zeroNMatrix);
+}
+
+LqgControl::LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
+                        bool& discretize, bool& u_feedback, double& dt,
+                        const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
+                        const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
+                        const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R,
+                        const Eigen::MatrixXd& Sd, const Eigen::MatrixXd& Sn,
+                        const Eigen::MatrixXd& P0)
+{
+  Eigen::MatrixXd zeroNMatrix;
+  zeroNMatrix = Eigen::MatrixXd::Zero(XDoF,UDoF);
+  LqgControl::_LqgControlFull_(XDoF, UDoF, YDoF, discretize, u_feedback, dt,
+                                A, B, C, D, Q, R, zeroNMatrix, Sd, Sn, P0);
+}
+
+LqgControl::LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
+                        bool& discretize, bool& u_feedback, double& dt,
+                        const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
+                        const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
+                        const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R,
+                        const Eigen::MatrixXd& Sd, const Eigen::MatrixXd& Sn)
+{
+  Eigen::MatrixXd zeroNMatrix;
+  zeroNMatrix = Eigen::MatrixXd::Zero(XDoF,UDoF);
+  Eigen::MatrixXd smallP0Matrix;
+  smallP0Matrix = Eigen::MatrixXd::Ones(XDoF,XDoF) * 1e-12;
+  LqgControl::_LqgControlFull_(XDoF, UDoF, YDoF, discretize, u_feedback, dt,
+                                A, B, C, D, Q, R, zeroNMatrix, Sd, Sn, smallP0Matrix);
+}
+
 void LqgControl::_LqrControlFull_(const int& XDoF, const int& UDoF, const int& YDoF,
                 bool& discretize, bool& u_feedback, double& dt,
                 std::vector<double>& A, std::vector<double>& B,
@@ -136,7 +201,7 @@ void LqgControl::_LqrControlFull_(const int& XDoF, const int& UDoF, const int& Y
   }
   // Create LQR object
   this->optimal_controller = dLQR(this->A_, this->B_, this->Q_, this->R_, this->N_);
-  std::cout << "LQR Controller Gains: \n" << this->optimal_controller.getK() << std::endl;
+  //std::cout << "LQR Controller Gains: \n" << this->optimal_controller.getK() << std::endl;
 }
 
 void LqgControl::_LqgControlFull_(const int& XDoF, const int& UDoF, const int& YDoF,
@@ -153,6 +218,74 @@ void LqgControl::_LqgControlFull_(const int& XDoF, const int& UDoF, const int& Y
   this->initializeCovariances(Sd, Sn, P0);
 }
 
+void LqgControl::_LqrControlFull_(const int& XDoF, const int& UDoF, const int& YDoF,
+                bool& discretize, bool& u_feedback, double& dt,
+                const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
+                const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
+                const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R,
+                const Eigen::MatrixXd& N)
+{
+  this->_mtx = new std::mutex();
+  this->XDoF_ = XDoF;
+  this->UDoF_ = UDoF;
+  this->YDoF_ = YDoF;
+  this->dt_ = dt;
+  this->u_feedback_ = u_feedback;
+  // clean std::vector parameters (check !NULL and check size)
+  if ((size_t)(A.rows()) != XDoF_ || (size_t)(A.cols()) != XDoF_)
+    throw std::runtime_error("State matrix A size is ill-formed!");
+  if ((size_t)(B.rows()) != XDoF_ || (size_t)(B.cols()) != UDoF_)
+    throw std::runtime_error("State matrix B size is ill-formed!");
+  if ((size_t)(C.rows()) != YDoF_ || (size_t)(C.cols()) != XDoF_)
+    throw std::runtime_error("State matrix C size is ill-formed!");
+  //if (D.rows() != YDoF_ || D.cols() != UDoF_)
+  //  throw std::runtime_error("State matrix D size is ill-formed!");
+  if ((size_t)(Q.rows()) != XDoF_ || (size_t)(Q.cols()) != XDoF_)
+    throw std::runtime_error("Weight matrix Q size is ill-formed!");
+  if ((size_t)(R.rows()) != UDoF_ || (size_t)(R.cols()) != UDoF_)
+    throw std::runtime_error("Weight matrix R size is ill-formed!");
+  if ((size_t)(N.rows()) != XDoF_ || (size_t)(N.cols()) != UDoF_)
+    throw std::runtime_error("Weight matrix N size is ill-formed!");
+  // convert to Eigen types
+  this->A_ = A;
+  this->B_ = B;
+  this->C_ = C;
+  //this->D_ = D;
+  this->X_ = Eigen::VectorXd::Zero(XDoF);
+  this->X_des_ = Eigen::VectorXd::Zero(XDoF);
+  this->U_ = Eigen::VectorXd::Zero(UDoF);
+  this->U_act_ = Eigen::VectorXd::Zero(UDoF);
+  this->Y_ = Eigen::VectorXd::Zero(YDoF);
+  this->Q_ = Q;
+  this->R_ = R;
+  this->N_ = N;
+  if (discretize)
+  {
+    // Apply Tustin transformation to discretize A_.
+    this->A_ = (Eigen::MatrixXd::Identity(XDoF,XDoF) + 0.5*dt*this->A_)*
+                (Eigen::MatrixXd::Identity(XDoF,XDoF) - 0.5*dt*this->A_).
+                  colPivHouseholderQr().solve(Eigen::MatrixXd::Identity(XDoF,XDoF));
+    this->B_ *= dt;
+  }
+  // Create LQR object
+  this->optimal_controller = dLQR(this->A_, this->B_, this->Q_, this->R_, this->N_);
+  //std::cout << "LQR Controller Gains: \n" << this->optimal_controller.getK() << std::endl;
+}
+
+void LqgControl::_LqgControlFull_(const int& XDoF, const int& UDoF, const int& YDoF,
+                bool& discretize, bool& u_feedback, double& dt,
+                const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
+                const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
+                const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R,
+                const Eigen::MatrixXd& N,
+                const Eigen::MatrixXd& Sd, const Eigen::MatrixXd& Sn,
+                const Eigen::MatrixXd& P0)
+{
+  LqgControl::_LqrControlFull_(XDoF, UDoF, YDoF, discretize, u_feedback, dt,
+                                A, B, C, D, Q, R, N);
+  this->initializeCovariances(Sd, Sn, P0);
+}
+
 void LqgControl::initializeCovariances(std::vector<double>& Sd, std::vector<double>& Sn)
 {
   std::vector<double> smallP0Matrix(XDoF_*XDoF_, 1e-12);
@@ -162,19 +295,46 @@ void LqgControl::initializeCovariances(std::vector<double>& Sd, std::vector<doub
 void LqgControl::initializeCovariances(std::vector<double>& Sd, std::vector<double>& Sn,
                                       std::vector<double>& P0)
 {
-  if (Sd.size()!=XDoF_*XDoF_)
+  if ((size_t)(Sd.size())!=XDoF_*XDoF_)
     throw std::runtime_error("Disturbance covariance matrix Sd is ill-formed!");
-  if (Sn.size()!=YDoF_*YDoF_)
+  if ((size_t)(Sn.size())!=YDoF_*YDoF_)
     throw std::runtime_error("Measurement covariance matrix Sn is ill-formed!");
   matrixPack(Sd, this->sigmaDisturbance_);
   matrixPack(Sn, this->sigmaMeasurements_);
   Eigen::MatrixXd stateCov;
-  stateCov = Eigen::MatrixXd::Zero(XDoF_, XDoF_);
+  stateCov = Eigen::MatrixXd::Ones(XDoF_,XDoF_) * 1e-12;
   // If the initial state covariance is mal-formed, it will be ignored.
   matrixPack(P0, stateCov);
   
   this->optimal_state_estimate = KalmanFilter(dt_, this->A_, this->B_, this->C_, 
                                   this->sigmaDisturbance_, this->sigmaMeasurements_, stateCov);
+}
+
+void LqgControl::initializeCovariances(const Eigen::MatrixXd& Sd, const Eigen::MatrixXd& Sn)
+{
+  Eigen::MatrixXd smallP0Matrix;
+  smallP0Matrix = Eigen::MatrixXd::Ones(XDoF_,XDoF_) * 1e-12;
+  this->initializeCovariances(Sd, Sn, smallP0Matrix);
+}
+
+void LqgControl::initializeCovariances(const Eigen::MatrixXd& Sd, const Eigen::MatrixXd& Sn,
+                                      const Eigen::MatrixXd& P0)
+{
+  if ((size_t)(Sd.rows())!=XDoF_ || (size_t)(Sd.cols())!=XDoF_)
+    throw std::runtime_error("Disturbance covariance matrix Sd is ill-formed!");
+  if ((size_t)(Sn.rows())!=YDoF_ || (size_t)(Sn.cols())!=YDoF_)
+    throw std::runtime_error("Measurement covariance matrix Sn is ill-formed!");
+  this->sigmaDisturbance_ = Sd;
+  this->sigmaMeasurements_ = Sn;
+  if ((size_t)(P0.rows())!=XDoF_ || (size_t)(P0.cols())!=XDoF_){
+    this->optimal_state_estimate = KalmanFilter(dt_, this->A_, this->B_, this->C_, 
+                                  this->sigmaDisturbance_, this->sigmaMeasurements_, P0);
+  } else {
+    Eigen::MatrixXd stateCov;
+    stateCov = Eigen::MatrixXd::Ones(XDoF_,XDoF_) * 1e-12;
+    this->optimal_state_estimate = KalmanFilter(dt_, this->A_, this->B_, this->C_, 
+                                  this->sigmaDisturbance_, this->sigmaMeasurements_, stateCov);
+  }
 }
 
 void LqgControl::initializeStates(std::vector<double>& X0)
@@ -205,7 +365,7 @@ void LqgControl::initializeStates(std::vector<double>& X0, std::vector<double>& 
   x0_ = Eigen::VectorXd::Zero(XDoF_);
   vectorPack(X0, x0_);
   Eigen::MatrixXd stateCov;
-  stateCov = Eigen::MatrixXd::Zero(XDoF_, XDoF_);
+  stateCov = Eigen::MatrixXd::Ones(XDoF_,XDoF_) * 1e-12;
   matrixPack(P0, stateCov);
   this->optimal_state_estimate.init(
     static_cast<double>(tNow.seconds())+
@@ -213,73 +373,13 @@ void LqgControl::initializeStates(std::vector<double>& X0, std::vector<double>& 
     x0_, stateCov);
 }
 
-int LqgControl::vectorPack(std::vector<double>& in, Eigen::VectorXd& out)
+void LqgControl::initializeStates(const Eigen::VectorXd& X0, const Eigen::MatrixXd& P0)
 {
-  // conversion from std types to Eigen types
-  if ((size_t)(out.size()) != in.size())
-    return -1;
-  out = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(in.data(), in.size());
-  return 0;
-}
-
-int LqgControl::matrixPack(std::vector<double>& in, Eigen::MatrixXd& out)
-{
-  // conversion from std types to Eigen types
-  if ((size_t)(out.size()) != in.size())
-    return -1;
-  size_t ind = 0;
-  for (size_t i = 0; i < (size_t)(out.rows()); i++)
-  {
-    for (size_t j = 0; j < (size_t)(out.cols()); j++)
-    {
-      out(i,j) = in[ind];
-      ind ++;
-    }
-  }
-  return 0;
-}
-
-int LqgControl::matrixUnpack(const Eigen::MatrixXd& in, std::vector<double>& out)
-{
-  // conversion from std types to Eigen types
-  if ((size_t)(out.size()) != static_cast<long unsigned int>(in.size()))
-    return -1;
-  size_t ind = 0;
-  for (size_t i = 0; i < (size_t)(in.rows()); i++)
-  {
-    for (size_t j = 0; j < (size_t)(in.cols()); j++)
-    {
-      out[ind] = in(i,j);
-      ind ++;
-    }
-  }
-  return 0;
-}
-
-void LqgControl::setCmdToZeros()
-{
-  std::lock_guard<std::mutex> l(*_mtx);
-  this->U_.setZero();
-  if (!this->u_feedback_)
-    this->U_act_ = this->U_;
-}
-
-void LqgControl::updateActualControl(const Eigen::VectorXd& u)
-{
-  std::lock_guard<std::mutex> l(*_mtx);
-  if ((size_t)(u.size()) != this->UDoF_)
-    return;
-  this->U_act_ = u;
-}
-
-std::pair<Eigen::VectorXd, Eigen::MatrixXd> LqgControl::getPrediction()
-{
-  std::lock_guard<std::mutex> l(*_mtx);
-  if (this->predicted_)
-    return std::make_pair(this->Y_, this->sigmaMeasurements_);
-  this->predicted_ = true;
-  std::tie(this->Y_, this->sigmaMeasurements_) = this->optimal_state_estimate.predict(this->U_act_);
-  return std::make_pair(this->Y_, this->sigmaMeasurements_);
+  rclcpp::Time tNow = rclcpp::Clock().now();
+  this->optimal_state_estimate.init(
+    static_cast<double>(tNow.seconds())+
+    static_cast<double>(tNow.nanoseconds())*1.e-9,
+    X0, P0);
 }
 
 void LqgControl::updateMeasurement(const std_msgs::msg::Float64MultiArray::SharedPtr msg)
@@ -386,7 +486,11 @@ void LqgControl::controlCallback(const rclcpp::Logger& logger)
     return;
   }
 
+  this->predicted_ = false;
+
   if ( state_dt >= this->dt_ ){
+    this->getPrediction();
+    this->optimal_state_estimate.update_time_variant_R(this->Y_, this->U_act_, this->sigmaMeasurements_, control_dt);
     this->setCmdToZeros();
     RCLCPP_WARN(logger,
                     "State observation age: %f seconds is too stale! (timeout = %f s)\n",

@@ -50,7 +50,7 @@ LqgControlNode::LqgControlNode(const rclcpp::NodeOptions& options=rclcpp::NodeOp
   if (gaussian_)
   {
     this->controller_ = control::LqgControl(XDoF_, UDoF_, YDoF_, discretize_, u_fb_, dt_,
-                                  aM_, bM_, cM_, dM_, qM_, rM_, sdM_, snM_, p0M_, nM_);
+                                  aM_, bM_, cM_, dM_, qM_, rM_, nM_, sdM_, snM_, p0M_);
   } else {
     this->controller_ = control::LqgControl(XDoF_, UDoF_, YDoF_, discretize_, u_fb_, dt_,
                                   aM_, bM_, cM_, dM_, qM_, rM_, nM_);

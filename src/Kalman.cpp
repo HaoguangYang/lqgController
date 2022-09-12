@@ -70,12 +70,18 @@ namespace control
   KalmanFilter::KalmanFilter() {}
 
   void KalmanFilter::init(double t0, const Eigen::VectorXd& x0) {
+    if (x0.size() != XDoF_)
+      return;
     this->x_hat = x0;
     this->t = t0;
     this->initialized = true;
   }
   
   void KalmanFilter::init(double t0, const Eigen::VectorXd& x0, const Eigen::MatrixXd& P0) {
+    if (x0.size() != XDoF_)
+      return;
+    if (P0.rows() != XDoF_ || P0.cols() != XDoF_)
+      return;
     this->x_hat = x0;
     this->P = P0;
     this->t = t0;
