@@ -47,7 +47,7 @@ class LqgControl
     /// @param[in] Q specifies the state space error penalty.
     /// @param[in] R specifies the control effort penalty.
     LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
-                bool& discretize, bool& u_feedback, double& dt,
+                const bool& discretize, const bool& u_feedback, const double& dt,
                 std::vector<double>& A, std::vector<double>& B,
                 std::vector<double>& C, std::vector<double>& D,
                 std::vector<double>& Q, std::vector<double>& R);
@@ -61,7 +61,7 @@ class LqgControl
     /// @param[in] R specifies the control effort penalty.
     /// @param[in] N specifies the error-effort cross penalty. [NOT YET IMPLEMENTED]
     LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
-                bool& discretize, bool& u_feedback, double& dt,
+                const bool& discretize, const bool& u_feedback, const double& dt,
                 std::vector<double>& A, std::vector<double>& B,
                 std::vector<double>& C, std::vector<double>& D,
                 std::vector<double>& Q, std::vector<double>& R,
@@ -77,7 +77,7 @@ class LqgControl
     /// @param[in] Sd Covariance of disturbance matrix. The input combinations without 
     /// @param[in] Sn Covariance of noise matrix
     LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
-                bool& discretize, bool& u_feedback, double& dt,
+                const bool& discretize, const bool& u_feedback, const double& dt,
                 std::vector<double>& A, std::vector<double>& B,
                 std::vector<double>& C, std::vector<double>& D,
                 std::vector<double>& Q, std::vector<double>& R,
@@ -94,7 +94,7 @@ class LqgControl
     /// @param[in] Sn Covariance of noise matrix
     /// @param[in] P0 Initial state covariance matrix
     LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
-                bool& discretize, bool& u_feedback, double& dt,
+                const bool& discretize, const bool& u_feedback, const double& dt,
                 std::vector<double>& A, std::vector<double>& B,
                 std::vector<double>& C, std::vector<double>& D,
                 std::vector<double>& Q, std::vector<double>& R,
@@ -113,7 +113,7 @@ class LqgControl
     /// @param[in] Sn Covariance of noise matrix
     /// @param[in] P0 Initial state covariance matrix
     LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
-                bool& discretize, bool& u_feedback, double& dt,
+                const bool& discretize, const bool& u_feedback, const double& dt,
                 std::vector<double>& A, std::vector<double>& B,
                 std::vector<double>& C, std::vector<double>& D,
                 std::vector<double>& Q, std::vector<double>& R,
@@ -131,7 +131,7 @@ class LqgControl
     /// @param[in] Q specifies the state space error penalty.
     /// @param[in] R specifies the control effort penalty.
     LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
-                bool& discretize, bool& u_feedback, double& dt,
+                const bool& discretize, const bool& u_feedback, const double& dt,
                 const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
                 const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
                 const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R);
@@ -145,7 +145,7 @@ class LqgControl
     /// @param[in] R specifies the control effort penalty.
     /// @param[in] N specifies the error-effort cross penalty. [NOT YET IMPLEMENTED]
     LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
-                bool& discretize, bool& u_feedback, double& dt,
+                const bool& discretize, const bool& u_feedback, const double& dt,
                 const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
                 const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
                 const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R,
@@ -161,7 +161,7 @@ class LqgControl
     /// @param[in] Sd Covariance of disturbance matrix. The input combinations without 
     /// @param[in] Sn Covariance of noise matrix
     LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
-                bool& discretize, bool& u_feedback, double& dt,
+                const bool& discretize, const bool& u_feedback, const double& dt,
                 const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
                 const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
                 const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R,
@@ -178,7 +178,7 @@ class LqgControl
     /// @param[in] Sn Covariance of noise matrix
     /// @param[in] P0 Initial state covariance matrix
     LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
-                bool& discretize, bool& u_feedback, double& dt,
+                const bool& discretize, const bool& u_feedback, const double& dt,
                 const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
                 const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
                 const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R,
@@ -197,7 +197,7 @@ class LqgControl
     /// @param[in] Sn Covariance of noise matrix
     /// @param[in] P0 Initial state covariance matrix
     LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
-                bool& discretize, bool& u_feedback, double& dt,
+                const bool& discretize, const bool& u_feedback, const double& dt,
                 const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
                 const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
                 const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R,
@@ -338,13 +338,13 @@ class LqgControl
   
   private:
     inline void _LqrControlFull_(const int& XDoF, const int& UDoF, const int& YDoF,
-                bool& discretize, bool& u_feedback, double& dt,
+                const bool& discretize, const bool& u_feedback, const double& dt,
                 std::vector<double>& A, std::vector<double>& B,
                 std::vector<double>& C, std::vector<double>& D,
                 std::vector<double>& Q, std::vector<double>& R,
                 std::vector<double>& N);
     inline void _LqgControlFull_(const int& XDoF, const int& UDoF, const int& YDoF,
-                bool& discretize, bool& u_feedback, double& dt,
+                const bool& discretize, const bool& u_feedback, const double& dt,
                 std::vector<double>& A, std::vector<double>& B,
                 std::vector<double>& C, std::vector<double>& D,
                 std::vector<double>& Q, std::vector<double>& R,
@@ -352,13 +352,13 @@ class LqgControl
                 std::vector<double>& Sd, std::vector<double>& Sn,
                 std::vector<double>& P0);
     inline void _LqrControlFull_(const int& XDoF, const int& UDoF, const int& YDoF,
-                bool& discretize, bool& u_feedback, double& dt,
+                const bool& discretize, const bool& u_feedback, const double& dt,
                 const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
                 const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
                 const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R,
                 const Eigen::MatrixXd& N);
     inline void _LqgControlFull_(const int& XDoF, const int& UDoF, const int& YDoF,
-                bool& discretize, bool& u_feedback, double& dt,
+                const bool& discretize, const bool& u_feedback, const double& dt,
                 const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
                 const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
                 const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R,

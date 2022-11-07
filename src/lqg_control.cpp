@@ -18,7 +18,7 @@
 namespace control
 {
 LqgControl::LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
-                        bool& discretize, bool& u_feedback, double& dt,
+                        const bool& discretize, const bool& u_feedback, const double& dt,
                         std::vector<double>& A, std::vector<double>& B,
                         std::vector<double>& C, std::vector<double>& D,
                         std::vector<double>& Q, std::vector<double>& R,
@@ -29,7 +29,7 @@ LqgControl::LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
 }
 
 LqgControl::LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
-                        bool& discretize, bool& u_feedback, double& dt,
+                        const bool& discretize, const bool& u_feedback, const double& dt,
                         std::vector<double>& A, std::vector<double>& B,
                         std::vector<double>& C, std::vector<double>& D,
                         std::vector<double>& Q, std::vector<double>& R,
@@ -42,7 +42,7 @@ LqgControl::LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
 }
 
 LqgControl::LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
-                        bool& discretize, bool& u_feedback, double& dt,
+                        const bool& discretize, const bool& u_feedback, const double& dt,
                         std::vector<double>& A, std::vector<double>& B,
                         std::vector<double>& C, std::vector<double>& D,
                         std::vector<double>& Q, std::vector<double>& R)
@@ -53,7 +53,7 @@ LqgControl::LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
 }
 
 LqgControl::LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
-                        bool& discretize, bool& u_feedback, double& dt,
+                        const bool& discretize, const bool& u_feedback, const double& dt,
                         std::vector<double>& A, std::vector<double>& B,
                         std::vector<double>& C, std::vector<double>& D,
                         std::vector<double>& Q, std::vector<double>& R,
@@ -66,7 +66,7 @@ LqgControl::LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
 }
 
 LqgControl::LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
-                        bool& discretize, bool& u_feedback, double& dt,
+                        const bool& discretize, const bool& u_feedback, const double& dt,
                         std::vector<double>& A, std::vector<double>& B,
                         std::vector<double>& C, std::vector<double>& D,
                         std::vector<double>& Q, std::vector<double>& R,
@@ -79,7 +79,7 @@ LqgControl::LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
 }
 
 LqgControl::LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
-                        bool& discretize, bool& u_feedback, double& dt,
+                        const bool& discretize, const bool& u_feedback, const double& dt,
                         const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
                         const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
                         const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R,
@@ -90,7 +90,7 @@ LqgControl::LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
 }
 
 LqgControl::LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
-                        bool& discretize, bool& u_feedback, double& dt,
+                        const bool& discretize, const bool& u_feedback, const double& dt,
                         const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
                         const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
                         const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R,
@@ -103,7 +103,7 @@ LqgControl::LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
 }
 
 LqgControl::LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
-                        bool& discretize, bool& u_feedback, double& dt,
+                        const bool& discretize, const bool& u_feedback, const double& dt,
                         const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
                         const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
                         const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R)
@@ -115,7 +115,7 @@ LqgControl::LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
 }
 
 LqgControl::LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
-                        bool& discretize, bool& u_feedback, double& dt,
+                        const bool& discretize, const bool& u_feedback, const double& dt,
                         const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
                         const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
                         const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R,
@@ -129,7 +129,7 @@ LqgControl::LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
 }
 
 LqgControl::LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
-                        bool& discretize, bool& u_feedback, double& dt,
+                        const bool& discretize, const bool& u_feedback, const double& dt,
                         const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
                         const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
                         const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R,
@@ -144,7 +144,7 @@ LqgControl::LqgControl(const int& XDoF, const int& UDoF, const int& YDoF,
 }
 
 void LqgControl::_LqrControlFull_(const int& XDoF, const int& UDoF, const int& YDoF,
-                bool& discretize, bool& u_feedback, double& dt,
+                const bool& discretize, const bool& u_feedback, const double& dt,
                 std::vector<double>& A, std::vector<double>& B,
                 std::vector<double>& C, std::vector<double>& D,
                 std::vector<double>& Q, std::vector<double>& R,
@@ -205,7 +205,7 @@ void LqgControl::_LqrControlFull_(const int& XDoF, const int& UDoF, const int& Y
 }
 
 void LqgControl::_LqgControlFull_(const int& XDoF, const int& UDoF, const int& YDoF,
-                bool& discretize, bool& u_feedback, double& dt,
+                const bool& discretize, const bool& u_feedback, const double& dt,
                 std::vector<double>& A, std::vector<double>& B,
                 std::vector<double>& C, std::vector<double>& D,
                 std::vector<double>& Q, std::vector<double>& R,
@@ -219,7 +219,7 @@ void LqgControl::_LqgControlFull_(const int& XDoF, const int& UDoF, const int& Y
 }
 
 void LqgControl::_LqrControlFull_(const int& XDoF, const int& UDoF, const int& YDoF,
-                bool& discretize, bool& u_feedback, double& dt,
+                const bool& discretize, const bool& u_feedback, const double& dt,
                 const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
                 const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
                 const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R,
@@ -273,7 +273,7 @@ void LqgControl::_LqrControlFull_(const int& XDoF, const int& UDoF, const int& Y
 }
 
 void LqgControl::_LqgControlFull_(const int& XDoF, const int& UDoF, const int& YDoF,
-                bool& discretize, bool& u_feedback, double& dt,
+                const bool& discretize, const bool& u_feedback, const double& dt,
                 const Eigen::MatrixXd& A, const Eigen::MatrixXd& B,
                 const Eigen::MatrixXd& C, const Eigen::MatrixXd& D,
                 const Eigen::MatrixXd& Q, const Eigen::MatrixXd& R,
