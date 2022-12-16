@@ -482,7 +482,7 @@ void LqgControl::controlCallback(const rclcpp::Logger& logger)
   {
     this->setCmdToZeros();
     rclcpp::Clock clock;
-    RCLCPP_WARN_THROTTLE(logger, clock, 1, "Controller still waiting for initial state to initialize...\n");
+    RCLCPP_WARN_THROTTLE(logger, clock, 2000U, "Controller still waiting for initial state to initialize...\n");
     return;
   }
 
