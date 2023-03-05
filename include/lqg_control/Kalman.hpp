@@ -15,6 +15,9 @@
 
 #include <eigen3/Eigen/Dense>
 
+// #include <iostream>
+// #include <stdexcept>
+
 namespace control {
 
 class KalmanFilter {
@@ -36,29 +39,62 @@ class KalmanFilter {
    *   P - Estimate error covariance
    */
 
-  KalmanFilter(const double &dt, const Eigen::MatrixXd &A, const Eigen::MatrixXd &C);
+  KalmanFilter(const Eigen::MatrixXd &A, const Eigen::MatrixXd &C)
+      : KalmanFilter(A, Eigen::MatrixXd(), C, Eigen::MatrixXd::Zero(A.rows(), A.rows()),
+                     Eigen::MatrixXd::Zero(C.rows(), C.rows()),
+                     Eigen::MatrixXd::Zero(A.cols(), A.cols())){};
 
-  KalmanFilter(const double &dt, const Eigen::MatrixXd &A, const Eigen::MatrixXd &B,
-               const Eigen::MatrixXd &C);
+  KalmanFilter(const Eigen::MatrixXd &A, const Eigen::MatrixXd &B, const Eigen::MatrixXd &C)
+      : KalmanFilter(A, B, C, Eigen::MatrixXd::Zero(A.rows(), A.rows()),
+                     Eigen::MatrixXd::Zero(C.rows(), C.rows()),
+                     Eigen::MatrixXd::Zero(A.cols(), A.cols())){};
 
-  KalmanFilter(const double &dt, const Eigen::MatrixXd &A, const Eigen::MatrixXd &C,
-               const Eigen::MatrixXd &Q, const Eigen::MatrixXd &R, const Eigen::MatrixXd &P);
+  KalmanFilter(const Eigen::MatrixXd &A, const Eigen::MatrixXd &C, const Eigen::MatrixXd &Q,
+               const Eigen::MatrixXd &R, const Eigen::MatrixXd &P)
+      : KalmanFilter(A, Eigen::MatrixXd(), C, Q, R, P){};
 
-  KalmanFilter(const double &dt, const Eigen::MatrixXd &A, const Eigen::MatrixXd &B,
-               const Eigen::MatrixXd &C, const Eigen::MatrixXd &Q, const Eigen::MatrixXd &R,
-               const Eigen::MatrixXd &P);
+  KalmanFilter(const Eigen::MatrixXd &A, const Eigen::MatrixXd &B, const Eigen::MatrixXd &C,
+               const Eigen::MatrixXd &Q, const Eigen::MatrixXd &R, const Eigen::MatrixXd &P)
+      : A(A),
+        B(B),
+        C(C),
+        Q(Q),
+        R(R),
+        P(P),
+        YDoF_(C.rows()),
+        XDoF_(A.rows()),
+        UDoF_(B.cols()),
+        initialized(false),
+        x_hat(XDoF_),
+        x_hat_new(XDoF_){};
 
   /**
    * Initialize the filter with initial states as zero.
    */
-  void init();
+  bool init() {
+    this->x_hat.setZero();
+    this->initialized = true;
+    return true;
+  };
 
   /**
    * Initialize the filter with a guess for initial states.
    */
-  void init(const double &t0, const Eigen::VectorXd &x0);
+  bool init(const Eigen::VectorXd &x0) {
+    if (x0.size() != XDoF_) return false;
+    this->x_hat = x0;
+    this->initialized = true;
+    return true;
+  };
 
-  void init(const double &t0, const Eigen::VectorXd &x0, const Eigen::MatrixXd &P0);
+  bool init(const Eigen::VectorXd &x0, const Eigen::MatrixXd &P0) {
+    if (x0.size() != XDoF_) return false;
+    if (P0.rows() != XDoF_ || P0.cols() != XDoF_) return false;
+    this->x_hat = x0;
+    this->P = P0;
+    this->initialized = true;
+    return true;
+  };
 
   bool isInitialized() const { return initialized; };
 
@@ -73,42 +109,59 @@ class KalmanFilter {
    * Update the estimated state based on measured values. The
    * time step is assumed to remain constant.
    */
-  inline void update(const Eigen::VectorXd &y, const Eigen::VectorXd &u);
-  inline void update(const Eigen::VectorXd &y);
+  void update(const Eigen::VectorXd &y, const Eigen::VectorXd &u);
+  void update(const Eigen::VectorXd &y);
 
-  void updateNoCov(const Eigen::VectorXd &y);
+  void updateNoCov(const Eigen::VectorXd &y) {
+    this->x_hat = this->C.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(y);
+    if (this->x_hat.hasNaN()) this->x_hat.setZero();
+    this->P.setZero();
+  };
 
   /**
    * Update the estimated state based on measured values,
    * using the given time step and dynamics matrix.
    */
   void update_time_variant_A(const Eigen::VectorXd &y, const Eigen::VectorXd &u,
-                             const Eigen::MatrixXd &A);
-  void update_time_variant_A(const Eigen::VectorXd &y, const Eigen::VectorXd &u,
-                             const Eigen::MatrixXd &A, const double &dt);
-  void update_time_variant_A(const Eigen::VectorXd &y, const Eigen::MatrixXd &A);
-  void update_time_variant_A(const Eigen::VectorXd &y, const Eigen::MatrixXd &A, const double &dt);
+                             const Eigen::MatrixXd &A) {
+    this->A = A;
+    update(y, u);
+  };
+
+  void update_time_variant_A(const Eigen::VectorXd &y, const Eigen::MatrixXd &A) {
+    this->A = A;
+    update(y);
+  };
+
   void update_time_variant_R(const Eigen::VectorXd &y, const Eigen::VectorXd &u,
-                             const Eigen::MatrixXd &R);
-  void update_time_variant_R(const Eigen::VectorXd &y, const Eigen::VectorXd &u,
-                             const Eigen::MatrixXd &R, const double &dt);
-  void update_time_variant_R(const Eigen::VectorXd &y, const Eigen::MatrixXd &R);
-  void update_time_variant_R(const Eigen::VectorXd &y, const Eigen::MatrixXd &R, const double &dt);
+                             const Eigen::MatrixXd &R) {
+    this->R = R;
+    update(y, u);
+  };
+
+  void update_time_variant_R(const Eigen::VectorXd &y, const Eigen::MatrixXd &R) {
+    this->R = R;
+    update(y);
+  };
+
   void update_time_variant_both_A_and_R(const Eigen::VectorXd &y, const Eigen::VectorXd &u,
-                                        const Eigen::MatrixXd &A, const Eigen::MatrixXd &R);
-  void update_time_variant_both_A_and_R(const Eigen::VectorXd &y, const Eigen::VectorXd &u,
-                                        const Eigen::MatrixXd &A, const Eigen::MatrixXd &R,
-                                        const double &dt);
+                                        const Eigen::MatrixXd &A, const Eigen::MatrixXd &R) {
+    this->A = A;
+    this->R = R;
+    update(y, u);
+  };
+
   void update_time_variant_both_A_and_R(const Eigen::VectorXd &y, const Eigen::MatrixXd &A,
-                                        const Eigen::MatrixXd &R);
-  void update_time_variant_both_A_and_R(const Eigen::VectorXd &y, const Eigen::MatrixXd &A,
-                                        const Eigen::MatrixXd &R, const double &dt);
+                                        const Eigen::MatrixXd &R) {
+    this->A = A;
+    this->R = R;
+    update(y);
+  };
 
   /**
    * Return the current state and time.
    */
   Eigen::VectorXd state() const { return x_hat; };
-  double time() const { return t; };
 
  private:
   // Matrices for computation
@@ -117,14 +170,8 @@ class KalmanFilter {
   // System dimensions
   int YDoF_, XDoF_, UDoF_;
 
-  // Initial and current time
-  double t;
-
-  // Discrete time step
-  double dt;
-
   // Is the filter initialized?
-  bool initialized;
+  bool initialized = false;
 
   bool predicted_;
 

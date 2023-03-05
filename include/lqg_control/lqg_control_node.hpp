@@ -67,12 +67,14 @@ class LqgControlNode : public rclcpp::Node {
 
   void publishDebugSignals();
 
+  double toSecs(const rclcpp::Time &time) { return time.nanoseconds() * 1.e-9; }
+
   rcl_interfaces::msg::SetParametersResult paramUpdateCallback(
       const std::vector<rclcpp::Parameter> &parameters);
 
   bool mute_, debug_, gaussian_, discretize_, u_fb_;
 
-  double dt_;
+  double dt_, lastMeasUpdTime_, lastCtrlTime_;
 
   control::LqgControl *controller_;
 

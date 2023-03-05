@@ -126,20 +126,32 @@ rcl_interfaces::msg::SetParametersResult LqgControlNode::paramUpdateCallback(
 }
 
 void LqgControlNode::updateMeasurement(const std_msgs::msg::Float64MultiArray::SharedPtr msg) {
-  this->controller_->updateMeasurement(msg);
+  this->controller_->updateMeasurement(msg->data);
+  lastMeasUpdTime_ = toSecs(this->get_clock()->now());
 }
 
 void LqgControlNode::updateMeasurementCov(const std_msgs::msg::Float64MultiArray::SharedPtr msg) {
-  this->controller_->updateMeasurementCov(msg);
+  this->controller_->updateMeasurementCov(msg->data);
 }
 
 void LqgControlNode::updateDesiredState(const std_msgs::msg::Float64MultiArray::SharedPtr msg) {
-  this->controller_->updateDesiredState(msg);
+  this->controller_->updateDesiredState(msg->data);
 }
 
 void LqgControlNode::controlCallback() {
   // call controller->controlCallback and update raw commands.
-  this->controller_->controlCallback(this->get_logger());
+  if (!this->controller_->isInitialized()) {
+    this->controller_->setCmdToZeros();
+    auto clock = this->get_clock();
+    RCLCPP_WARN_THROTTLE(this->get_logger(), *clock, 2000U,
+                         "Controller still waiting for initial state to initialize...");
+    return;
+  }
+
+  bool hasNewMeas = lastMeasUpdTime_ > lastCtrlTime_;
+  lastCtrlTime_ = toSecs(this->get_clock()->now());
+  this->controller_->controlCallback(!hasNewMeas);
+  
   if (!this->mute_) this->publishCommand();
   if (this->debug_) this->publishDebugSignals();
 }

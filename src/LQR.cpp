@@ -49,20 +49,25 @@ dLQR::dLQR(const Eigen::MatrixXd &K) : K_(K), u_(K_.rows()), e_(K_.rows()) {
 dLQR::dLQR(const Eigen::MatrixXd &A, const Eigen::MatrixXd &B, const Eigen::MatrixXd &Q,
            const Eigen::MatrixXd &R, const Eigen::MatrixXd &N)
     : K_(B.cols(), A.rows()), u_(B.cols()), e_(B.cols()) {
-  Eigen::MatrixXd S = dare(A, B, Q, R, N);
+  // by setting u1 = u + R^-1 * N^T * x we can account for the cross-over term N. Reference:
+  // https://math.stackexchange.com/questions/1777348/lqr-problem-with-interaction-term-between-state-and-control
+  Eigen::ColPivHouseholderQR<Eigen::MatrixXd> Rinv_qr = R.colPivHouseholderQr();
+  Eigen::MatrixXd AA = A - B * Rinv_qr.solve(N.transpose());
+  Eigen::MatrixXd QQ = Q - N * Rinv_qr.solve(N.transpose());
+  Eigen::MatrixXd S = dare(AA, B, QQ, R);
   std::cout << "DARE SOLUTION: \n" << S << std::endl;
   Eigen::MatrixXd lhs = R + B.transpose() * S * B;
-  Eigen::MatrixXd rhs = B.transpose() * S * A + N.transpose();
-  K_ = lhs.colPivHouseholderQr().solve(rhs);
+  Eigen::MatrixXd rhs = B.transpose() * S * AA;
+  K_ = lhs.colPivHouseholderQr().solve(rhs) + Rinv_qr.solve(N.transpose());
   u_.setZero();
   e_.setZero();
   this->initialized = true;
 }
 
 Eigen::MatrixXd dLQR::dare(const Eigen::MatrixXd &A, const Eigen::MatrixXd &B,
-                           const Eigen::MatrixXd &Q, const Eigen::MatrixXd &R,
-                           const Eigen::MatrixXd &N) {
-  // TODO: cross-prod term N is not used for now.
+                           const Eigen::MatrixXd &Q, const Eigen::MatrixXd &R) {
+  // TODO:
+  // https://math.stackexchange.com/questions/1777348/lqr-problem-with-interaction-term-between-state-and-control
   const int dim_x = A.cols();
   const int dim_u = B.cols();
   Eigen::MatrixXd balancedA;

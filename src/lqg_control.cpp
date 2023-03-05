@@ -36,7 +36,6 @@ LqrControl::LqrControl(const int &XDoF, const int &UDoF, const int &YDoF, const 
       XDoF_(XDoF),
       UDoF_(UDoF),
       YDoF_(YDoF),
-      dt_(dt),
       u_feedback_(u_feedback) {
   // clean std::vector parameters (check !NULL and check size)
   if (A.size() != XDoF_ * XDoF_) throw std::runtime_error("State matrix A size is ill-formed!");
@@ -88,7 +87,6 @@ LqrControl::LqrControl(const int &XDoF, const int &UDoF, const int &YDoF, const 
       XDoF_(XDoF),
       UDoF_(UDoF),
       YDoF_(YDoF),
-      dt_(dt),
       u_feedback_(u_feedback) {
   // clean std::vector parameters (check !NULL and check size)
   if ((size_t)(A.rows()) != XDoF_ || (size_t)(A.cols()) != XDoF_)
@@ -145,13 +143,12 @@ LqgControl::LqgControl(const int &XDoF, const int &UDoF, const int &YDoF, const 
     throw std::runtime_error("Measurement covariance matrix Sn size is ill-formed!");
   if (P0.size() != XDoF_ * XDoF_) {
     this->optimal_state_estimate =
-        new KalmanFilter(dt_, this->A_, this->B_, this->C_, this->sigmaDisturbance_,
+        new KalmanFilter(this->A_, this->B_, this->C_, this->sigmaDisturbance_,
                          this->sigmaMeasurements_, Eigen::MatrixXd::Constant(XDoF_, XDoF_, 1e-12));
   } else {
     Eigen::MatrixXd p0Mat = Eigen::Map<const Eigen::MatrixXd>(P0.data(), XDoF, XDoF);
-    this->optimal_state_estimate =
-        new KalmanFilter(dt_, this->A_, this->B_, this->C_, this->sigmaDisturbance_,
-                         this->sigmaMeasurements_, p0Mat);
+    this->optimal_state_estimate = new KalmanFilter(
+        this->A_, this->B_, this->C_, this->sigmaDisturbance_, this->sigmaMeasurements_, p0Mat);
   }
 }
 
@@ -170,30 +167,15 @@ LqgControl::LqgControl(const int &XDoF, const int &UDoF, const int &YDoF, const 
     throw std::runtime_error("Measurement covariance matrix Sn size is ill-formed!");
   if ((size_t)(P0.rows()) != XDoF_ || (size_t)(P0.cols()) != XDoF_) {
     this->optimal_state_estimate =
-        new KalmanFilter(dt_, this->A_, this->B_, this->C_, this->sigmaDisturbance_,
+        new KalmanFilter(this->A_, this->B_, this->C_, this->sigmaDisturbance_,
                          this->sigmaMeasurements_, Eigen::MatrixXd::Constant(XDoF_, XDoF_, 1e-12));
   } else {
     this->optimal_state_estimate = new KalmanFilter(
-        dt_, this->A_, this->B_, this->C_, this->sigmaDisturbance_, this->sigmaMeasurements_, P0);
+        this->A_, this->B_, this->C_, this->sigmaDisturbance_, this->sigmaMeasurements_, P0);
   }
 }
 
-void LqgControl::initializeStates(std::vector<double> &X0) {
-  rclcpp::Time tNow = rclcpp::Clock().now();
-  Eigen::VectorXd x0_;
-  x0_ = Eigen::Map<const Eigen::VectorXd>(X0.data(), XDoF_);
-  this->optimal_state_estimate->init(
-      static_cast<double>(tNow.seconds()) + static_cast<double>(tNow.nanoseconds()) * 1.e-9, x0_);
-}
-
-void LqgControl::initializeStates(const Eigen::VectorXd &X0) {
-  rclcpp::Time tNow = rclcpp::Clock().now();
-  this->optimal_state_estimate->init(
-      static_cast<double>(tNow.seconds()) + static_cast<double>(tNow.nanoseconds()) * 1.e-9, X0);
-}
-
-void LqgControl::initializeStates(std::vector<double> &X0, std::vector<double> &P0) {
-  rclcpp::Time tNow = rclcpp::Clock().now();
+void LqgControl::initializeStates(const std::vector<double> &X0, const std::vector<double> &P0) {
   Eigen::VectorXd x0_;
   x0_ = Eigen::Map<const Eigen::VectorXd>(X0.data(), XDoF_);
   Eigen::MatrixXd stateCov;
@@ -202,26 +184,17 @@ void LqgControl::initializeStates(std::vector<double> &X0, std::vector<double> &
   } else {
     stateCov = Eigen::MatrixXd::Ones(XDoF_, XDoF_) * 1e-12;
   }
-  this->optimal_state_estimate->init(
-      static_cast<double>(tNow.seconds()) + static_cast<double>(tNow.nanoseconds()) * 1.e-9, x0_,
-      stateCov);
+  this->optimal_state_estimate->init(x0_, stateCov);
 }
 
-void LqgControl::initializeStates(const Eigen::VectorXd &X0, const Eigen::MatrixXd &P0) {
-  rclcpp::Time tNow = rclcpp::Clock().now();
-  this->optimal_state_estimate->init(
-      static_cast<double>(tNow.seconds()) + static_cast<double>(tNow.nanoseconds()) * 1.e-9, X0,
-      P0);
-}
-
-void LqgControl::updateMeasurementCov(const std_msgs::msg::Float64MultiArray::SharedPtr msg) {
+void LqgControl::updateMeasurementCov(const std::vector<double> &msg) {
   // Assuming all elements in the msg array are row-major valid readings.
-  if (msg->data.size() == (this->YDoF_ + 1) * this->YDoF_ / 2) {
+  if (msg.size() == (this->YDoF_ + 1) * this->YDoF_ / 2) {
     // Upper triangular matrix notation
     size_t ind = 0;
     for (size_t i = 0; i < this->YDoF_; i++) {
       for (size_t j = i; j < this->YDoF_; j++) {
-        this->sigmaMeasurements_(i, j) = msg->data[ind];
+        this->sigmaMeasurements_(i, j) = msg[ind];
         ind++;
       }
       for (size_t j = 0; j < i; j++) {
@@ -229,52 +202,42 @@ void LqgControl::updateMeasurementCov(const std_msgs::msg::Float64MultiArray::Sh
       }
     }
     return;
-  } else if (msg->data.size() != this->YDoF_ * this->YDoF_)
+  } else if (msg.size() != this->YDoF_ * this->YDoF_)
     return;
 
   // Full matrix notation
-  if (msg->data.size() == this->YDoF_ * this->YDoF_)
-    this->sigmaMeasurements_ = Eigen::Map<const Eigen::MatrixXd>(msg->data.data(), YDoF_, YDoF_);
+  if (msg.size() == this->YDoF_ * this->YDoF_)
+    this->sigmaMeasurements_ = Eigen::Map<const Eigen::MatrixXd>(msg.data(), YDoF_, YDoF_);
 }
 
-void LqgControl::controlCallback(const rclcpp::Logger &logger) {
+void LqgControl::controlCallback(const bool &fullInternalUpdate) {
   if (this->optimal_state_estimate == NULL) {
-    LqrControl::controlCallback(logger);
+    LqrControl::controlCallback();
     return;
   }
-  
-  rclcpp::Time control_time = rclcpp::Clock().now();
-  rclcpp::Duration time_diff = control_time - this->state_update_time_;
-  double state_dt = static_cast<double>(time_diff.seconds()) +
-                    static_cast<double>(time_diff.nanoseconds()) * 1e-9;
-  time_diff = control_time - this->last_control_time_;
-  double control_dt = static_cast<double>(time_diff.seconds()) +
-                      static_cast<double>(time_diff.nanoseconds()) * 1.e-9;
-  this->last_control_time_ = control_time;
 
   if (!this->optimal_state_estimate->isInitialized()) {
     this->setCmdToZeros();
-    rclcpp::Clock clock;
-    RCLCPP_WARN_THROTTLE(logger, clock, 2000U,
-                         "Controller still waiting for initial state to initialize...\n");
     return;
   }
 
   this->predicted_ = false;
 
-  if (state_dt >= this->dt_) {
-    this->getPrediction();
+  if (fullInternalUpdate) {
+    this->predicted_ = true;
+    std::tie(this->Y_, this->sigmaMeasurements_) =
+        this->optimal_state_estimate->predict(this->U_act_);
     this->optimal_state_estimate->update_time_variant_R(this->Y_, this->U_act_,
-                                                        this->sigmaMeasurements_, control_dt);
+                                                        this->sigmaMeasurements_);
     this->setCmdToZeros();
-    RCLCPP_WARN(logger, "State observation age: %f seconds is too stale! (timeout = %f s)\n",
-                state_dt, this->dt_);
+    // RCLCPP_WARN(logger, "State observation age: %f seconds is too stale! (timeout = %f s)\n",
+    //             state_dt, this->dt_);
     return;
   }
 
   // summarize asynchronous updates of the state measurements.
   this->optimal_state_estimate->update_time_variant_R(this->Y_, this->U_act_,
-                                                      this->sigmaMeasurements_, control_dt);
+                                                      this->sigmaMeasurements_);
   this->U_ = this->optimal_controller->calculateControl(this->optimal_state_estimate->state(),
                                                         this->X_des_);
 

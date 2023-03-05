@@ -26,8 +26,8 @@
 
 #include "lqg_control/Kalman.hpp"
 #include "lqg_control/LQR.hpp"
-#include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/float64_multi_array.hpp"
+// #include "rclcpp/rclcpp.hpp"
+// #include "std_msgs/msg/float64_multi_array.hpp"
 
 namespace control {
 
@@ -138,6 +138,11 @@ class LqrControl {
   };
   */
 
+  virtual bool isInitialized() {
+    if (this->optimal_controller == NULL) return false;
+    return this->optimal_controller->isInitialized();
+  };
+
   void setCmdToZeros() {
     this->U_.setZero();
     if (!this->u_feedback_) this->U_act_ = this->U_;
@@ -152,17 +157,15 @@ class LqrControl {
     this->U_act_ = u;
   };
 
-  void updateMeasurement(const std_msgs::msg::Float64MultiArray::SharedPtr msg) {
+  void updateMeasurement(const std::vector<double> &msg) {
     // Assuming all elements in the msg array are valid readings.
     // size checking
-    if (msg->data.size() != this->YDoF_) return;
-    this->state_update_time_ = rclcpp::Clock().now();
-    this->Y_ = Eigen::Map<const Eigen::VectorXd>(msg->data.data(), YDoF_);
+    if (msg.size() != this->YDoF_) return;
+    this->Y_ = Eigen::Map<const Eigen::VectorXd>(msg.data(), YDoF_);
   };
 
   void updateMeasurement(const Eigen::VectorXd &Y) {
     if ((size_t)(Y.size()) != this->YDoF_) return;
-    this->state_update_time_ = rclcpp::Clock().now();
     this->Y_ = Y;
   };
 
@@ -170,11 +173,11 @@ class LqrControl {
 
   Eigen::VectorXd currentError() const { return this->optimal_controller->currentError(); };
 
-  void updateDesiredState(const std_msgs::msg::Float64MultiArray::SharedPtr msg) {
+  void updateDesiredState(const std::vector<double> &msg) {
     // Assuming all elements in the msg array are valid readings.
     // size checking
-    if (msg->data.size() != this->XDoF_) return;
-    this->X_des_ = Eigen::Map<const Eigen::VectorXd>(msg->data.data(), XDoF_);
+    if (msg.size() != this->XDoF_) return;
+    this->X_des_ = Eigen::Map<const Eigen::VectorXd>(msg.data(), XDoF_);
   };
 
   // FIXME: Not inlining these functions cause SIGSEV due to memory optimizations
@@ -183,7 +186,7 @@ class LqrControl {
     this->X_des_ = X_des;
   };
 
-  void controlCallback(const rclcpp::Logger &logger) {
+  void controlCallback() {
     this->X_ = this->C_inv_ * (this->Y_ - this->D_ * this->U_);
     this->U_ = this->optimal_controller->calculateControl(this->X_, this->X_des_);
   };
@@ -192,12 +195,9 @@ class LqrControl {
   Eigen::MatrixXd A_, B_, C_, C_inv_, D_, Q_, R_, N_;
   Eigen::VectorXd X_, X_des_, U_, U_act_, Y_;
   size_t XDoF_, UDoF_, YDoF_;
-  double dt_;
   bool u_feedback_, discretize_;
 
-  rclcpp::Time state_update_time_, last_control_time_;
-
-  control::dLQR *optimal_controller;
+  control::dLQR *optimal_controller = NULL;
 
 };  // end of class
 
@@ -331,13 +331,26 @@ class LqgControl : public LqrControl {
 
   virtual ~LqgControl() { delete (this->optimal_state_estimate); };
 
-  void initializeStates(std::vector<double> &X0);
+  bool isInitialized() override {
+    if (this->optimal_controller == NULL) return false;
+    if (this->optimal_state_estimate == NULL) return false;
+    return this->optimal_controller->isInitialized() &&
+           (this->optimal_state_estimate->isInitialized());
+  };
 
-  void initializeStates(const Eigen::VectorXd &X0);
+  void initializeStates(const std::vector<double> &X0) {
+    Eigen::VectorXd x0_;
+    x0_ = Eigen::Map<const Eigen::VectorXd>(X0.data(), XDoF_);
+    this->optimal_state_estimate->init(x0_);
+  };
 
-  void initializeStates(std::vector<double> &X0, std::vector<double> &P0);
+  void initializeStates(const Eigen::VectorXd &X0) { this->optimal_state_estimate->init(X0); };
 
-  void initializeStates(const Eigen::VectorXd &X0, const Eigen::MatrixXd &P0);
+  void initializeStates(const std::vector<double> &X0, const std::vector<double> &P0);
+
+  void initializeStates(const Eigen::VectorXd &X0, const Eigen::MatrixXd &P0) {
+    this->optimal_state_estimate->init(X0, P0);
+  };
 
   std::pair<Eigen::VectorXd, Eigen::MatrixXd> getPrediction() {
     if (this->predicted_) return std::make_pair(this->Y_, this->sigmaMeasurements_);
@@ -347,7 +360,7 @@ class LqgControl : public LqrControl {
     return std::make_pair(this->Y_, this->sigmaMeasurements_);
   };
 
-  void updateMeasurementCov(const std_msgs::msg::Float64MultiArray::SharedPtr msg);
+  void updateMeasurementCov(const std::vector<double> &msg);
 
   void updateMeasurementCov(Eigen::MatrixXd &cov) {
     if ((size_t)(cov.cols()) != this->YDoF_) return;
@@ -359,7 +372,7 @@ class LqgControl : public LqrControl {
     return this->optimal_state_estimate->isInitialized();
   };
 
-  void controlCallback(const rclcpp::Logger &logger);
+  void controlCallback(const bool &fullInternalUpdate = false);
 
  protected:
   Eigen::MatrixXd sigmaDisturbance_, sigmaMeasurements_;

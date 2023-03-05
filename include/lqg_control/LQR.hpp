@@ -61,8 +61,7 @@ class dLQR {
    *  @param[in] B specifies the discrete-time state space equation.
    *  @param[in] Q specifies the state space error penalty.
    *  @param[in] R specifies the control effort penalty.
-   *  @param[in] N specifies the error-effort cross penalty. [NOT YET
-   *  IMPLEMENTED]
+   *  @param[in] N specifies the error-effort cross penalty.
    */
   dLQR(const Eigen::MatrixXd &A, const Eigen::MatrixXd &B, const Eigen::MatrixXd &Q,
        const Eigen::MatrixXd &R, const Eigen::MatrixXd &N);
@@ -77,16 +76,16 @@ class dLQR {
    * W. F. Arnold and A. J. Laub, "Generalized eigenproblem algorithms and software for algebraic
    * Riccati equations," in Proceedings of the IEEE, vol. 72, no. 12, pp. 1746-1754, Dec. 1984,
    * doi: 10.1109/PROC.1984.13083.
-   * The DARE solver is based on:
-   * https://github.com/arunabh1904/LQR-ROS/blob/master/lqr_obsavoid/src/are_solver.cpp.
-   * The WIP DARE solver with N term used is based on:
-   * https://github.com/scipy/scipy/blob/v1.7.1/scipy/linalg/_solvers.py#L529-L734.
    */
   Eigen::MatrixXd care(const Eigen::MatrixXd &A, const Eigen::MatrixXd &B, const Eigen::MatrixXd &Q,
                        const Eigen::MatrixXd &R, const Eigen::MatrixXd &N);
 
+  /**
+   * @brief The DARE solver is based on:
+   * https://github.com/arunabh1904/LQR-ROS/blob/master/lqr_obsavoid/src/are_solver.cpp.
+   */
   Eigen::MatrixXd dare(const Eigen::MatrixXd &A, const Eigen::MatrixXd &B, const Eigen::MatrixXd &Q,
-                       const Eigen::MatrixXd &R, const Eigen::MatrixXd &N);
+                       const Eigen::MatrixXd &R);
 
   /**
    *  @brief Input the current states and desired states, output the control values
