@@ -40,58 +40,56 @@
 #include <iostream>
 
 namespace control {
-dLQR::dLQR(const Eigen::MatrixXd &K) : K_(K), u_(K_.rows()), e_(K_.rows()) {
+dLQR::dLQR(const MatrixXd &K) : K_(K), u_(K_.rows()), e_(K_.rows()) {
   u_.setZero();
   e_.setZero();
   this->initialized = true;
 }
 
-dLQR::dLQR(const Eigen::MatrixXd &A, const Eigen::MatrixXd &B, const Eigen::MatrixXd &Q,
-           const Eigen::MatrixXd &R, const Eigen::MatrixXd &N)
+dLQR::dLQR(const MatrixXd &A, const MatrixXd &B, const MatrixXd &Q, const MatrixXd &R,
+           const MatrixXd &N)
     : K_(B.cols(), A.rows()), u_(B.cols()), e_(B.cols()) {
   // by setting u1 = u + R^-1 * N^T * x we can account for the cross-over term N. Reference:
   // https://math.stackexchange.com/questions/1777348/lqr-problem-with-interaction-term-between-state-and-control
-  Eigen::ColPivHouseholderQR<Eigen::MatrixXd> Rinv_qr = R.colPivHouseholderQr();
-  Eigen::MatrixXd AA = A - B * Rinv_qr.solve(N.transpose());
-  Eigen::MatrixXd QQ = Q - N * Rinv_qr.solve(N.transpose());
-  Eigen::MatrixXd S = dare(AA, B, QQ, R);
+  MatrixXd Rinv = R.colPivHouseholderQr().solve(N.transpose()).eval();
+  MatrixXd AA = A - B * Rinv;
+  MatrixXd QQ = Q - N * Rinv;
+  MatrixXd S = dare(AA, B, QQ, R);
   std::cout << "DARE SOLUTION: \n" << S << std::endl;
-  Eigen::MatrixXd lhs = R + B.transpose() * S * B;
-  Eigen::MatrixXd rhs = B.transpose() * S * AA;
-  K_ = lhs.colPivHouseholderQr().solve(rhs) + Rinv_qr.solve(N.transpose());
+  MatrixXd lhs = R + B.transpose() * S * B;
+  MatrixXd rhs = B.transpose() * S * AA;
+  K_ = lhs.colPivHouseholderQr().solve(rhs).eval() + Rinv;
   u_.setZero();
   e_.setZero();
   this->initialized = true;
 }
 
-Eigen::MatrixXd dLQR::dare(const Eigen::MatrixXd &A, const Eigen::MatrixXd &B,
-                           const Eigen::MatrixXd &Q, const Eigen::MatrixXd &R) {
+MatrixXd dLQR::dare(const MatrixXd &A, const MatrixXd &B, const MatrixXd &Q, const MatrixXd &R) {
   // TODO:
   // https://math.stackexchange.com/questions/1777348/lqr-problem-with-interaction-term-between-state-and-control
   const int dim_x = A.cols();
   const int dim_u = B.cols();
-  Eigen::MatrixXd balancedA;
-  Eigen::VectorXd balanceP;
+  MatrixXd balancedA;
+  VectorXd balanceP;
   // balancedA = inv(balanceP) * A * balanceP
   std::tie(balancedA, balanceP) = balance_matrix(A);
-  double cond = balancedA.completeOrthogonalDecomposition().pseudoInverse().norm() * A.norm();
+  double cond = pseudoInverse(balancedA).norm() * A.norm();
   if (cond > 1.e6) {
     std::cout << "[WARNING] You are using an onboard-computed controller gain matrix with \n"
               << "System Condition Number = " << cond << "\nThe gain matrix may be problematic.\n"
               << "YOU HAVE BEEN WARNED." << std::endl;
   }
-  Eigen::MatrixXd AinvT =
-      (balanceP.asDiagonal() *
-       balancedA.colPivHouseholderQr().solve(Eigen::MatrixXd::Identity(dim_x, dim_x)) *
-       balanceP.cwiseInverse().asDiagonal())
-          .transpose();
-  Eigen::MatrixXd Rinv = R.ldlt().solve(Eigen::MatrixXd::Identity(dim_u, dim_u));
+  MatrixXd AinvT = (balanceP.asDiagonal() *
+                    balancedA.colPivHouseholderQr().solve(MatrixXd::Identity(dim_x, dim_x)) *
+                    balanceP.cwiseInverse().asDiagonal())
+                       .transpose();
+  MatrixXd Rinv = R.ldlt().solve(MatrixXd::Identity(dim_u, dim_u));
 
   // set Sympletic matrix pencil
-  Eigen::MatrixXd tmp2 = -B * Rinv * B.transpose() * AinvT;
-  Eigen::MatrixXd tmp1 = A - tmp2 * Q;
-  Eigen::MatrixXd tmp3 = -AinvT * Q;
-  Eigen::MatrixXd Sym(2 * dim_x, 2 * dim_x);
+  MatrixXd tmp2 = -B * Rinv * B.transpose() * AinvT;
+  MatrixXd tmp1 = A - tmp2 * Q;
+  MatrixXd tmp3 = -AinvT * Q;
+  MatrixXd Sym(2 * dim_x, 2 * dim_x);
   Sym << tmp1, tmp2, tmp3, AinvT;
 
   // Sym.block(0, dim_x, dim_x, dim_x) = tmp;
@@ -100,11 +98,11 @@ Eigen::MatrixXd dLQR::dare(const Eigen::MatrixXd &A, const Eigen::MatrixXd &B,
   // Sym.block(dim_x, 0, dim_x, dim_x) = -AinvT * Q;
   // Sym.block(dim_x, dim_x, dim_x, dim_x) = AinvT;
 
-  Eigen::MatrixXd balancedSym;
-  Eigen::VectorXd balancePS;
+  MatrixXd balancedSym;
+  VectorXd balancePS;
   std::tie(balancedSym, balancePS) = balance_matrix(Sym);
   // calc eigenvalues and eigenvectors
-  Eigen::ComplexEigenSolver<Eigen::MatrixXd> Eigs(balancedSym);
+  Eigen::ComplexEigenSolver<MatrixXd> Eigs(balancedSym);
 
   Eigen::MatrixXcd U_1(dim_x, dim_x);
   Eigen::MatrixXcd U_2(dim_x, dim_x);
@@ -122,10 +120,10 @@ Eigen::MatrixXd dLQR::dare(const Eigen::MatrixXd &A, const Eigen::MatrixXd &B,
   }
   // calc P with stable eigen vector matrix
   assert(u_col == dim_x && "DARE ERROR: No Solution Found");
-  cond = U_1.completeOrthogonalDecomposition().pseudoInverse().norm() * U_1.norm();
+  cond = pseudoInverse(U_1).norm() * U_1.norm();
   // balancePS.tail(dim_x).asDiagonal()* ...
   // *balancePS.head(dim_x).asDiagonal().inverse()
-  Eigen::MatrixXd P = (U_1 * U_1.adjoint()).ldlt().solve(U_1 * U_2.adjoint()).real();
+  MatrixXd P = (U_1 * U_1.adjoint()).ldlt().solve(U_1 * U_2.adjoint()).real();
   if (cond > 1.e6) {
     std::cout << "[WARNING] You are using an onboard-computed controller "
                  "gain matrix "
@@ -136,33 +134,32 @@ Eigen::MatrixXd dLQR::dare(const Eigen::MatrixXd &A, const Eigen::MatrixXd &B,
               << "YOU HAVE BEEN WARNED." << std::endl;
   }
 
-  Eigen::MatrixXd ret = (P + P.transpose()) * 0.5;
+  MatrixXd ret = (P + P.transpose()) * 0.5;
   return ret;
 }
 
 /*
-Eigen::MatrixXd dLQR::dare(const Eigen::MatrixXd &A, const Eigen::MatrixXd &B,
-                           const Eigen::MatrixXd &Q, const Eigen::MatrixXd &R,
-                           const Eigen::MatrixXd &N) {
+MatrixXd dLQR::dare(const MatrixXd &A, const MatrixXd &B, const MatrixXd &Q, const MatrixXd &R,
+                    const MatrixXd &N) {
   const uint dim_x = A.rows();
   const uint dim_u = B.cols();
 
   // set Sympletic matrix pencil
-  Eigen::MatrixXd Sym = Eigen::MatrixXd::Zero(2 * dim_x + dim_u, 2 * dim_x + dim_u);
+  MatrixXd Sym = MatrixXd::Zero(2 * dim_x + dim_u, 2 * dim_x + dim_u);
   Sym.block(0, 0, dim_x, dim_x) = A;
   Sym.block(0, 2 * dim_x, dim_x, dim_u) = B;
   Sym.block(dim_x, 0, dim_x, dim_x) = -Q;
-  Sym.block(dim_x, dim_x, dim_x, dim_x) = Eigen::MatrixXd::Identity(dim_x, dim_x);
+  Sym.block(dim_x, dim_x, dim_x, dim_x) = MatrixXd::Identity(dim_x, dim_x);
   Sym.block(dim_x, 2 * dim_x, dim_x, dim_u) = -N;
   Sym.block(2 * dim_x, 0, dim_u, dim_x) = N.transpose();
   Sym.block(2 * dim_x, 2 * dim_x, dim_u, dim_u) = R;
-  Eigen::MatrixXd J = Eigen::MatrixXd::Zero(2 * dim_x + dim_u, 2 * dim_x + dim_u);
-  J.block(0, 0, dim_x, dim_x) = Eigen::MatrixXd::Identity(dim_x, dim_x);
+  MatrixXd J = MatrixXd::Zero(2 * dim_x + dim_u, 2 * dim_x + dim_u);
+  J.block(0, 0, dim_x, dim_x) = MatrixXd::Identity(dim_x, dim_x);
   J.block(dim_x, dim_x, dim_x, dim_x) = A.transpose();
   J.block(2 * dim_x, dim_x, dim_u, dim_x) = -B.transpose();
 
-  Eigen::HouseholderQR<Eigen::MatrixXd> qr(Sym.rightCols(dim_u));
-  Eigen::MatrixXd Q1 = qr.householderQ();
+  Eigen::HouseholderQR<MatrixXd> qr(Sym.rightCols(dim_u));
+  MatrixXd Q1 = qr.householderQ();
   Eigen::MatrixXcd H = Q1.block(0, dim_u, 2 * dim_x + dim_u, 2 * dim_x).transpose() *
                        Sym.block(0, 0, 2 * dim_x + dim_u, 2 * dim_x);
   Eigen::MatrixXcd J1 = Q1.block(0, dim_u, 2 * dim_x + dim_u, 2 * dim_x).transpose() *
@@ -197,23 +194,22 @@ Eigen::MatrixXd dLQR::dare(const Eigen::MatrixXd &A, const Eigen::MatrixXd &B,
 }
 */
 
-Eigen::MatrixXd dLQR::care(const Eigen::MatrixXd &A, const Eigen::MatrixXd &B,
-                           const Eigen::MatrixXd &Q, const Eigen::MatrixXd &R,
-                           const Eigen::MatrixXd &N) {
+MatrixXd dLQR::care(const MatrixXd &A, const MatrixXd &B, const MatrixXd &Q, const MatrixXd &R,
+                    const MatrixXd &N) {
   const int dim_x = A.rows();
   // const int dim_u = B.cols();
 
   // set Hamilton matrix
-  Eigen::MatrixXd Ham = Eigen::MatrixXd::Zero(2 * dim_x, 2 * dim_x);
-  Eigen::MatrixXd Rinv = R.inverse();
-  Eigen::MatrixXd h1 = A - B * Rinv * N.transpose();
-  Eigen::MatrixXd h2 = -B * Rinv * B.transpose();
-  Eigen::MatrixXd h3 = N * Rinv * N.transpose() - Q;
-  Eigen::MatrixXd h4 = -(A - B * Rinv * N.transpose()).transpose();
+  MatrixXd Ham = MatrixXd::Zero(2 * dim_x, 2 * dim_x);
+  MatrixXd Rinv = R.inverse();
+  MatrixXd h1 = A - B * Rinv * N.transpose();
+  MatrixXd h2 = -B * Rinv * B.transpose();
+  MatrixXd h3 = N * Rinv * N.transpose() - Q;
+  MatrixXd h4 = -(A - B * Rinv * N.transpose()).transpose();
   Ham << h1, h2, h3, h4;
 
   // calc eigenvalues and eigenvectors
-  Eigen::EigenSolver<Eigen::MatrixXd> Eigs(Ham);
+  Eigen::EigenSolver<MatrixXd> Eigs(Ham);
 
   // check eigen values
   // std::cout << "eigen values：\n" << Eigs.eigenvalues() << std::endl;
@@ -234,17 +230,17 @@ Eigen::MatrixXd dLQR::care(const Eigen::MatrixXd &A, const Eigen::MatrixXd &B,
   Vs_1 = eigvec.block(0, 0, dim_x, dim_x);
   Vs_2 = eigvec.block(dim_x, 0, dim_x, dim_x);
 
-  Eigen::MatrixXd ret = (Vs_2 * Vs_1.inverse()).real();
+  MatrixXd ret = (Vs_2 * Vs_1.inverse()).real();
 
   return ret;
 }
 
-std::pair<Eigen::MatrixXd, Eigen::VectorXd> dLQR::balance_matrix(const Eigen::MatrixXd &A) {
+std::pair<MatrixXd, VectorXd> dLQR::balance_matrix(const MatrixXd &A) {
   // https://arxiv.org/pdf/1401.5766.pdf (Algorithm #3)
   const int p = 2;
   const double beta = 2.;  // Radix base (2)
-  Eigen::MatrixXd Aprime = A;
-  Eigen::VectorXd D = Eigen::VectorXd::Ones(A.rows());
+  MatrixXd Aprime = A;
+  VectorXd D = VectorXd::Ones(A.rows());
   bool converged = false;
   do {
     converged = true;
@@ -274,7 +270,7 @@ std::pair<Eigen::MatrixXd, Eigen::VectorXd> dLQR::balance_matrix(const Eigen::Ma
   return {Aprime, D};
 }
 
-Eigen::VectorXd dLQR::calculateControl(const Eigen::VectorXd &X, const Eigen::VectorXd &Xd) {
+VectorXd dLQR::calculateControl(const VectorXd &X, const VectorXd &Xd) {
   if (!initialized) throw std::runtime_error("LQR Controller is not initialized yet!");
   e_ = Xd - X;
   u_ = K_ * e_;

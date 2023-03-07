@@ -41,7 +41,26 @@
 #include <utility>
 // #include <armadillo>
 
+using Eigen::MatrixXd;
+using Eigen::VectorXd;
+
 namespace control {
+
+// method for calculating the pseudo-Inverse as recommended by Eigen developers
+template <typename _Matrix_Type_>
+_Matrix_Type_ pseudoInverse(const _Matrix_Type_ &a,
+                            double epsilon = std::numeric_limits<double>::epsilon()) {
+  Eigen::JacobiSVD<_Matrix_Type_> svd(a, Eigen::ComputeThinU | Eigen::ComputeThinV);
+  double tolerance = epsilon * std::max(a.cols(), a.rows()) * svd.singularValues().array().abs()(0);
+  _Matrix_Type_ ret = svd.matrixV() *
+                      (svd.singularValues().array().abs() > tolerance)
+                          .select(svd.singularValues().array().inverse(), 0)
+                          .matrix()
+                          .asDiagonal() *
+                      svd.matrixU().adjoint();
+  return ret;
+}
+
 /**
  * @class dLQR
  * @brief A discrete time LQR controller class. The LQR controller minimizes the H_inf control cost,
@@ -53,7 +72,7 @@ class dLQR {
    *  @brief Constructor
    *  @param[in] K is the LQR gain matrix for u=K(Xd-X), which drives X to Xd.
    */
-  dLQR(const Eigen::MatrixXd &K);
+  dLQR(const MatrixXd &K);
 
   /**
    *  @brief Constructor using system x[n+1]=Ax[n]+Bu[n]
@@ -63,8 +82,8 @@ class dLQR {
    *  @param[in] R specifies the control effort penalty.
    *  @param[in] N specifies the error-effort cross penalty.
    */
-  dLQR(const Eigen::MatrixXd &A, const Eigen::MatrixXd &B, const Eigen::MatrixXd &Q,
-       const Eigen::MatrixXd &R, const Eigen::MatrixXd &N);
+  dLQR(const MatrixXd &A, const MatrixXd &B, const MatrixXd &Q, const MatrixXd &R,
+       const MatrixXd &N);
 
   dLQR() = delete;
 
@@ -77,15 +96,14 @@ class dLQR {
    * Riccati equations," in Proceedings of the IEEE, vol. 72, no. 12, pp. 1746-1754, Dec. 1984,
    * doi: 10.1109/PROC.1984.13083.
    */
-  Eigen::MatrixXd care(const Eigen::MatrixXd &A, const Eigen::MatrixXd &B, const Eigen::MatrixXd &Q,
-                       const Eigen::MatrixXd &R, const Eigen::MatrixXd &N);
+  MatrixXd care(const MatrixXd &A, const MatrixXd &B, const MatrixXd &Q, const MatrixXd &R,
+                const MatrixXd &N);
 
   /**
    * @brief The DARE solver is based on:
    * https://github.com/arunabh1904/LQR-ROS/blob/master/lqr_obsavoid/src/are_solver.cpp.
    */
-  Eigen::MatrixXd dare(const Eigen::MatrixXd &A, const Eigen::MatrixXd &B, const Eigen::MatrixXd &Q,
-                       const Eigen::MatrixXd &R);
+  MatrixXd dare(const MatrixXd &A, const MatrixXd &B, const MatrixXd &Q, const MatrixXd &R);
 
   /**
    *  @brief Input the current states and desired states, output the control values
@@ -93,26 +111,26 @@ class dLQR {
    *  @param Xd is the most recently desired state space
    *  @return the control value from the LQR algorithm
    */
-  Eigen::VectorXd calculateControl(const Eigen::VectorXd &X, const Eigen::VectorXd &Xd);
+  VectorXd calculateControl(const VectorXd &X, const VectorXd &Xd);
 
-  std::pair<Eigen::MatrixXd, Eigen::VectorXd> balance_matrix(const Eigen::MatrixXd &A);
+  std::pair<MatrixXd, VectorXd> balance_matrix(const MatrixXd &A);
 
   /**
    *  @brief Get the current LQR gain.
    *  @return The current K matrix.
    */
-  Eigen::MatrixXd getK() const { return K_; };
+  MatrixXd getK() const { return K_; };
 
   /**
    *  @brief Get the current value of the control error
    */
-  Eigen::VectorXd currentError() const { return e_; };
+  VectorXd currentError() const { return e_; };
 
   /**
    *  @brief Get the current control value (calculated based on most recent errors)
    *  @return the current control value
    */
-  Eigen::VectorXd currentControl() const { return u_; };
+  VectorXd currentControl() const { return u_; };
   bool isInitialized() const { return initialized; };
 
  private:
@@ -124,17 +142,17 @@ class dLQR {
   /**
    *  @brief LQR gain.
    */
-  Eigen::MatrixXd K_;
+  MatrixXd K_;
 
   /**
    *  @brief Current control value
    */
-  Eigen::VectorXd u_;
+  VectorXd u_;
 
   /**
    *  @brief Current state space error used in LQR control algorithm
    */
-  Eigen::VectorXd e_;
+  VectorXd e_;
 
 };  // End class dLQR
 

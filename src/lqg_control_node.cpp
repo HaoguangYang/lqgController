@@ -46,11 +46,11 @@ LqgControlNode::LqgControlNode(const rclcpp::NodeOptions &options = rclcpp::Node
 
   // Initialize Controller
   if (gaussian_) {
-    this->controller_ = new control::LqgControl(XDoF_, UDoF_, YDoF_, discretize_, u_fb_, dt_, aM_,
+    this->controller_ = new control::LqgControl(XDoF_, UDoF_, YDoF_, u_fb_, discretize_, dt_, aM_,
                                                 bM_, cM_, dM_, qM_, rM_, nM_, sdM_, snM_, p0M_);
   } else {
-    this->controller_ = new control::LqgControl(XDoF_, UDoF_, YDoF_, discretize_, u_fb_, dt_, aM_,
-                                                bM_, cM_, dM_, qM_, rM_, nM_);
+    this->controller_ = new control::LqgControl(XDoF_, UDoF_, YDoF_, discretize_, dt_, aM_, bM_,
+                                                cM_, dM_, qM_, rM_, nM_);
   }
 
   // handle parameter updates
@@ -151,7 +151,7 @@ void LqgControlNode::controlCallback() {
   bool hasNewMeas = lastMeasUpdTime_ > lastCtrlTime_;
   lastCtrlTime_ = toSecs(this->get_clock()->now());
   this->controller_->controlCallback(!hasNewMeas);
-  
+
   if (!this->mute_) this->publishCommand();
   if (this->debug_) this->publishDebugSignals();
 }

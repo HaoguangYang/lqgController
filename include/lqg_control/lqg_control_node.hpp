@@ -42,17 +42,13 @@ class LqgControlNode : public rclcpp::Node {
     delete (controller_);
   };
 
-  std_msgs::msg::Float64MultiArray desiredStates;
-
-  std_msgs::msg::Float64MultiArray stateError;
-
-  std_msgs::msg::Float64MultiArray commandVector;
-
-  std_msgs::msg::Float64MultiArray measurements;
-
-  std_msgs::msg::Float64MultiArray measurementsCov;
-
  protected:
+
+  template <typename T>
+  double toSecs(const T& t) {
+    return t.nanoseconds() * 1.e-9;
+  }
+
   void registerStateSpaceIO();
 
   void updateMeasurement(const std_msgs::msg::Float64MultiArray::SharedPtr msg);
@@ -67,10 +63,11 @@ class LqgControlNode : public rclcpp::Node {
 
   void publishDebugSignals();
 
-  double toSecs(const rclcpp::Time &time) { return time.nanoseconds() * 1.e-9; }
-
   rcl_interfaces::msg::SetParametersResult paramUpdateCallback(
       const std::vector<rclcpp::Parameter> &parameters);
+
+  std_msgs::msg::Float64MultiArray desiredStates, stateError, commandVector;
+  std_msgs::msg::Float64MultiArray measurements, measurementsCov;
 
   bool mute_, debug_, gaussian_, discretize_, u_fb_;
 

@@ -16,127 +16,18 @@
 #include "lqg_control/lqg_control.hpp"
 
 namespace control {
-LqrControl::LqrControl(const int &XDoF, const int &UDoF, const int &YDoF, const bool &discretize,
-                       const bool &u_feedback, const double &dt, const std::vector<double> &A,
-                       const std::vector<double> &B, const std::vector<double> &C,
-                       const std::vector<double> &D, const std::vector<double> &Q,
-                       const std::vector<double> &R, const std::vector<double> &N)
-    : A_(Eigen::Map<const Eigen::MatrixXd>(A.data(), XDoF, XDoF)),
-      B_(Eigen::Map<const Eigen::MatrixXd>(B.data(), XDoF, UDoF)),
-      C_(Eigen::Map<const Eigen::MatrixXd>(C.data(), YDoF, XDoF)),
-      D_(Eigen::Map<const Eigen::MatrixXd>(D.data(), YDoF, UDoF)),
-      Q_(Eigen::Map<const Eigen::MatrixXd>(Q.data(), XDoF, XDoF)),
-      R_(Eigen::Map<const Eigen::MatrixXd>(R.data(), UDoF, UDoF)),
-      N_(Eigen::Map<const Eigen::MatrixXd>(N.data(), XDoF, UDoF)),
-      X_(XDoF),
-      X_des_(XDoF),
-      U_(UDoF),
+
+LqgControl::LqgControl(const int &XDoF, const int &UDoF, const int &YDoF, const bool &u_feedback,
+                       const bool &discretize, const double &dt, const vector<double> &A,
+                       const vector<double> &B, const vector<double> &C, const vector<double> &D,
+                       const vector<double> &Q, const vector<double> &R, const vector<double> &N,
+                       const vector<double> &Sd, const vector<double> &Sn, const vector<double> &P0)
+    : LqrControl(XDoF, UDoF, YDoF, discretize, dt, A, B, C, D, Q, R, N),
+      sigmaDisturbance_(Eigen::Map<const MatrixXd>(Sd.data(), XDoF, XDoF)),
+      sigmaMeasurements_(Eigen::Map<const MatrixXd>(Sn.data(), YDoF, YDoF)),
       U_act_(UDoF),
-      Y_(YDoF),
-      XDoF_(XDoF),
-      UDoF_(UDoF),
-      YDoF_(YDoF),
       u_feedback_(u_feedback) {
-  // clean std::vector parameters (check !NULL and check size)
-  if (A.size() != XDoF_ * XDoF_) throw std::runtime_error("State matrix A size is ill-formed!");
-  if (B.size() != XDoF_ * UDoF_) throw std::runtime_error("State matrix B size is ill-formed!");
-  if (C.size() != YDoF_ * XDoF_) throw std::runtime_error("State matrix C size is ill-formed!");
-  // if (D.size() != YDoF_*UDoF_)
-  //   throw std::runtime_error("State matrix D size is ill-formed!");
-  if (Q.size() != XDoF_ * XDoF_) throw std::runtime_error("Weight matrix Q size is ill-formed!");
-  if (R.size() != UDoF_ * UDoF_) throw std::runtime_error("Weight matrix R size is ill-formed!");
-  if (N.size() != XDoF_ * UDoF_) throw std::runtime_error("Weight matrix N size is ill-formed!");
-  this->X_.setZero();
-  this->X_des_.setZero();
-  this->U_.setZero();
   this->U_act_.setZero();
-  this->Y_.setZero();
-  auto cinvTmp = this->C_.completeOrthogonalDecomposition();
-  this->C_inv_ = cinvTmp.pseudoInverse();
-  if (discretize) {
-    // Apply Tustin transformation to discretize A_.
-    this->A_ = (Eigen::MatrixXd::Identity(XDoF, XDoF) + 0.5 * dt * this->A_) *
-               (Eigen::MatrixXd::Identity(XDoF, XDoF) - 0.5 * dt * this->A_)
-                   .colPivHouseholderQr()
-                   .solve(Eigen::MatrixXd::Identity(XDoF, XDoF));
-    this->B_ *= dt;
-  }
-  // Create LQR object
-  this->optimal_controller = new dLQR(this->A_, this->B_, this->Q_, this->R_, this->N_);
-  // std::cout << "LQR Controller Gains: \n" << this->optimal_controller.getK()
-  // << std::endl;
-}
-
-LqrControl::LqrControl(const int &XDoF, const int &UDoF, const int &YDoF, const bool &discretize,
-                       const bool &u_feedback, const double &dt, const Eigen::MatrixXd &A,
-                       const Eigen::MatrixXd &B, const Eigen::MatrixXd &C, const Eigen::MatrixXd &D,
-                       const Eigen::MatrixXd &Q, const Eigen::MatrixXd &R, const Eigen::MatrixXd &N)
-    : A_(A),
-      B_(B),
-      C_(C),
-      C_inv_(XDoF, YDoF),
-      D_(D),
-      Q_(Q),
-      R_(R),
-      N_(N),
-      X_(XDoF),
-      X_des_(XDoF),
-      U_(UDoF),
-      U_act_(UDoF),
-      Y_(YDoF),
-      XDoF_(XDoF),
-      UDoF_(UDoF),
-      YDoF_(YDoF),
-      u_feedback_(u_feedback) {
-  // clean std::vector parameters (check !NULL and check size)
-  if ((size_t)(A.rows()) != XDoF_ || (size_t)(A.cols()) != XDoF_)
-    throw std::runtime_error("State matrix A size is ill-formed!");
-  if ((size_t)(B.rows()) != XDoF_ || (size_t)(B.cols()) != UDoF_)
-    throw std::runtime_error("State matrix B size is ill-formed!");
-  if ((size_t)(C.rows()) != YDoF_ || (size_t)(C.cols()) != XDoF_)
-    throw std::runtime_error("State matrix C size is ill-formed!");
-  // if (D.rows() != YDoF_ || D.cols() != UDoF_)
-  //   throw std::runtime_error("State matrix D size is ill-formed!");
-  if ((size_t)(Q.rows()) != XDoF_ || (size_t)(Q.cols()) != XDoF_)
-    throw std::runtime_error("Weight matrix Q size is ill-formed!");
-  if ((size_t)(R.rows()) != UDoF_ || (size_t)(R.cols()) != UDoF_)
-    throw std::runtime_error("Weight matrix R size is ill-formed!");
-  if ((size_t)(N.rows()) != XDoF_ || (size_t)(N.cols()) != UDoF_)
-    throw std::runtime_error("Weight matrix N size is ill-formed!");
-  // convert to Eigen types
-  this->X_.setZero();
-  this->X_des_.setZero();
-  this->U_.setZero();
-  this->U_act_.setZero();
-  this->Y_.setZero();
-  auto cinvTmp = this->C_.completeOrthogonalDecomposition();
-  this->C_inv_ = cinvTmp.pseudoInverse();
-  if (discretize) {
-    // Apply Tustin transformation to discretize A_.
-    this->A_ = (Eigen::MatrixXd::Identity(XDoF, XDoF) + 0.5 * dt * this->A_) *
-               (Eigen::MatrixXd::Identity(XDoF, XDoF) - 0.5 * dt * this->A_)
-                   .colPivHouseholderQr()
-                   .solve(Eigen::MatrixXd::Identity(XDoF, XDoF));
-    this->B_ *= dt;
-  }
-  // Create LQR object
-  this->optimal_controller = new dLQR(this->A_, this->B_, this->Q_, this->R_, this->N_);
-  // std::cout << "LQR Controller Gains: \n" << this->optimal_controller.getK()
-  // << std::endl;
-}
-
-//==================================================================================
-
-LqgControl::LqgControl(const int &XDoF, const int &UDoF, const int &YDoF, const bool &discretize,
-                       const bool &u_feedback, const double &dt, const std::vector<double> &A,
-                       const std::vector<double> &B, const std::vector<double> &C,
-                       const std::vector<double> &D, const std::vector<double> &Q,
-                       const std::vector<double> &R, const std::vector<double> &N,
-                       const std::vector<double> &Sd, const std::vector<double> &Sn,
-                       const std::vector<double> &P0)
-    : LqrControl(XDoF, UDoF, YDoF, discretize, u_feedback, dt, A, B, C, D, Q, R, N),
-      sigmaDisturbance_(Eigen::Map<const Eigen::MatrixXd>(Sd.data(), XDoF, XDoF)),
-      sigmaMeasurements_(Eigen::Map<const Eigen::MatrixXd>(Sn.data(), YDoF, YDoF)) {
   if (Sd.size() != XDoF_ * XDoF_)
     throw std::runtime_error("Disturbance covariance matrix Sd size is ill-formed!");
   if (Sn.size() != YDoF_ * YDoF_)
@@ -144,23 +35,25 @@ LqgControl::LqgControl(const int &XDoF, const int &UDoF, const int &YDoF, const 
   if (P0.size() != XDoF_ * XDoF_) {
     this->optimal_state_estimate =
         new KalmanFilter(this->A_, this->B_, this->C_, this->sigmaDisturbance_,
-                         this->sigmaMeasurements_, Eigen::MatrixXd::Constant(XDoF_, XDoF_, 1e-12));
+                         this->sigmaMeasurements_, MatrixXd::Constant(XDoF_, XDoF_, 1e-12));
   } else {
-    Eigen::MatrixXd p0Mat = Eigen::Map<const Eigen::MatrixXd>(P0.data(), XDoF, XDoF);
+    MatrixXd p0Mat = Eigen::Map<const MatrixXd>(P0.data(), XDoF, XDoF);
     this->optimal_state_estimate = new KalmanFilter(
         this->A_, this->B_, this->C_, this->sigmaDisturbance_, this->sigmaMeasurements_, p0Mat);
   }
 }
 
-LqgControl::LqgControl(const int &XDoF, const int &UDoF, const int &YDoF, const bool &discretize,
-                       const bool &u_feedback, const double &dt, const Eigen::MatrixXd &A,
-                       const Eigen::MatrixXd &B, const Eigen::MatrixXd &C, const Eigen::MatrixXd &D,
-                       const Eigen::MatrixXd &Q, const Eigen::MatrixXd &R, const Eigen::MatrixXd &N,
-                       const Eigen::MatrixXd &Sd, const Eigen::MatrixXd &Sn,
-                       const Eigen::MatrixXd &P0)
-    : LqrControl(XDoF, UDoF, YDoF, discretize, u_feedback, dt, A, B, C, D, Q, R, N),
+LqgControl::LqgControl(const int &XDoF, const int &UDoF, const int &YDoF, const bool &u_feedback,
+                       const bool &discretize, const double &dt, const MatrixXd &A,
+                       const MatrixXd &B, const MatrixXd &C, const MatrixXd &D, const MatrixXd &Q,
+                       const MatrixXd &R, const MatrixXd &N, const MatrixXd &Sd, const MatrixXd &Sn,
+                       const MatrixXd &P0)
+    : LqrControl(XDoF, UDoF, YDoF, discretize, dt, A, B, C, D, Q, R, N),
       sigmaDisturbance_(Sd),
-      sigmaMeasurements_(Sn) {
+      sigmaMeasurements_(Sn),
+      U_act_(UDoF),
+      u_feedback_(u_feedback) {
+  this->U_act_.setZero();
   if ((size_t)(Sd.rows()) != XDoF_ || (size_t)(Sd.cols()) != XDoF_)
     throw std::runtime_error("Disturbance covariance matrix Sd size is ill-formed!");
   if ((size_t)(Sn.rows()) != YDoF_ || (size_t)(Sn.cols()) != YDoF_)
@@ -168,26 +61,39 @@ LqgControl::LqgControl(const int &XDoF, const int &UDoF, const int &YDoF, const 
   if ((size_t)(P0.rows()) != XDoF_ || (size_t)(P0.cols()) != XDoF_) {
     this->optimal_state_estimate =
         new KalmanFilter(this->A_, this->B_, this->C_, this->sigmaDisturbance_,
-                         this->sigmaMeasurements_, Eigen::MatrixXd::Constant(XDoF_, XDoF_, 1e-12));
+                         this->sigmaMeasurements_, MatrixXd::Constant(XDoF_, XDoF_, 1e-12));
   } else {
     this->optimal_state_estimate = new KalmanFilter(
         this->A_, this->B_, this->C_, this->sigmaDisturbance_, this->sigmaMeasurements_, P0);
   }
 }
 
-void LqgControl::initializeStates(const std::vector<double> &X0, const std::vector<double> &P0) {
-  Eigen::VectorXd x0_;
-  x0_ = Eigen::Map<const Eigen::VectorXd>(X0.data(), XDoF_);
-  Eigen::MatrixXd stateCov;
+void LqgControl::initializeStates(const vector<double> &X0, const vector<double> &P0) {
+  VectorXd x0_;
+  x0_ = Eigen::Map<const VectorXd>(X0.data(), XDoF_);
+  MatrixXd stateCov;
   if (P0.size() == XDoF_ * XDoF_) {
-    stateCov = Eigen::Map<const Eigen::MatrixXd>(P0.data(), XDoF_, XDoF_);
+    stateCov = Eigen::Map<const MatrixXd>(P0.data(), XDoF_, XDoF_);
   } else {
-    stateCov = Eigen::MatrixXd::Ones(XDoF_, XDoF_) * 1e-12;
+    stateCov = MatrixXd::Ones(XDoF_, XDoF_) * 1e-12;
   }
   this->optimal_state_estimate->init(x0_, stateCov);
 }
 
-void LqgControl::updateMeasurementCov(const std::vector<double> &msg) {
+void LqgControl::initializeStatesFromObs(const vector<double> &Y0, const vector<double> &P0) {
+  VectorXd y0_;
+  y0_ = Eigen::Map<const VectorXd>(Y0.data(), YDoF_);
+  VectorXd x_est_ = C_inv_ * y0_;
+  MatrixXd stateCov;
+  if (P0.size() == XDoF_ * XDoF_) {
+    stateCov = Eigen::Map<const MatrixXd>(P0.data(), XDoF_, XDoF_);
+  } else {
+    stateCov = MatrixXd::Ones(XDoF_, XDoF_) * 1e-12;
+  }
+  this->optimal_state_estimate->init(x_est_, stateCov);
+}
+
+void LqgControl::updateMeasurementCov(const vector<double> &msg) {
   // Assuming all elements in the msg array are row-major valid readings.
   if (msg.size() == (this->YDoF_ + 1) * this->YDoF_ / 2) {
     // Upper triangular matrix notation
@@ -206,8 +112,53 @@ void LqgControl::updateMeasurementCov(const std::vector<double> &msg) {
     return;
 
   // Full matrix notation
-  if (msg.size() == this->YDoF_ * this->YDoF_)
-    this->sigmaMeasurements_ = Eigen::Map<const Eigen::MatrixXd>(msg.data(), YDoF_, YDoF_);
+  this->sigmaMeasurements_ = Eigen::Map<const MatrixXd>(msg.data(), YDoF_, YDoF_);
+}
+
+void LqgControl::updateMeasurementCov(const vector<double> &msg, const vector<bool> &mask) {
+  if (mask.size() != this->YDoF_) return;
+  // Assuming all elements in the msg array are row-major valid readings.
+  if (msg.size() == (this->YDoF_ + 1) * this->YDoF_ / 2) {
+    // Upper triangular matrix notation
+    size_t ind = 0;
+    for (size_t i = 0; i < this->YDoF_; i++) {
+      for (size_t j = i; j < this->YDoF_; j++) {
+        if (mask[i] && mask[j]) this->sigmaMeasurements_(i, j) = msg[ind];
+        ind++;
+      }
+      for (size_t j = 0; j < i; j++) {
+        this->sigmaMeasurements_(i, j) = this->sigmaMeasurements_(j, i);
+      }
+    }
+    return;
+  } else if (msg.size() != this->YDoF_ * this->YDoF_)
+    return;
+
+  // Full matrix notation
+  size_t ind = 0;
+  for (size_t i = 0; i < this->YDoF_; i++) {
+    for (size_t j = 0; j < this->YDoF_; j++) {
+      if (mask[i] && mask[j]) this->sigmaMeasurements_(i, j) = msg[ind];
+      ind++;
+    }
+  }
+}
+
+void LqgControl::updateMeasurementCov(const MatrixXd &cov, const vector<bool> &mask) {
+  if ((size_t)(cov.cols()) != this->YDoF_) return;
+  if ((size_t)(cov.rows()) != this->YDoF_) return;
+  if (mask.size() != this->YDoF_) return;
+  for (size_t i = 0; i < this->YDoF_; i++) {
+    for (size_t j = 0; j < i; j++) {
+      if (mask[i] && mask[j]) {
+        this->sigmaMeasurements_(i, j) = cov(i, j);
+        this->sigmaMeasurements_(j, i) = cov(j, i);
+      }
+    }
+  }
+  for (size_t i = 0; i < this->YDoF_; i++) {
+    if (mask[i]) this->sigmaMeasurements_(i, i) = cov(i, i);
+  }
 }
 
 void LqgControl::controlCallback(const bool &fullInternalUpdate) {
@@ -221,11 +172,9 @@ void LqgControl::controlCallback(const bool &fullInternalUpdate) {
     return;
   }
 
-  this->predicted_ = false;
-
   if (fullInternalUpdate) {
-    this->predicted_ = true;
-    std::tie(this->Y_, this->sigmaMeasurements_) =
+    VectorXd x_est_tmp;
+    std::tie(this->Y_, this->sigmaMeasurements_, x_est_tmp) =
         this->optimal_state_estimate->predict(this->U_act_);
     this->optimal_state_estimate->update_time_variant_R(this->Y_, this->U_act_,
                                                         this->sigmaMeasurements_);
