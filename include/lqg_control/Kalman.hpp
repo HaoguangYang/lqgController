@@ -56,18 +56,21 @@ class KalmanFilter {
 
   KalmanFilter(const MatrixXd &A, const MatrixXd &B, const MatrixXd &C, const MatrixXd &Q,
                const MatrixXd &R, const MatrixXd &P)
-      : A(A),
+      : XDoF_(A.rows()),
+        YDoF_(C.rows()),
+        UDoF_(B.cols()),
+        initialized(false),
+        A(A),
         B(B),
         C(C),
         Q(Q),
         R(R),
         P(P),
-        YDoF_(C.rows()),
-        XDoF_(A.rows()),
-        UDoF_(B.cols()),
-        initialized(false),
+        K(XDoF_, YDoF_),
+        y_pred_cov_(YDoF_, YDoF_),
         x_hat(XDoF_),
-        x_hat_new(XDoF_){};
+        x_hat_new(XDoF_),
+        y_pred_(YDoF_){};
 
   /**
    * Initialize the filter with initial states as zero.
@@ -115,7 +118,7 @@ class KalmanFilter {
   void update(const VectorXd &y, const VectorXd &u);
   void update(const VectorXd &y);
 
-  void updateNoCov(const VectorXd &y) {
+  void update_no_cov(const VectorXd &y) {
     this->x_hat = this->C.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(y);
     if (this->x_hat.hasNaN()) this->x_hat.setZero();
     this->P.setZero();
@@ -164,14 +167,14 @@ class KalmanFilter {
   VectorXd state() const { return x_hat; };
 
  private:
-  // Matrices for computation
-  MatrixXd A, B, C, Q, R, P, K, P0;
-
   // System dimensions
-  int YDoF_, XDoF_, UDoF_;
+  int XDoF_, YDoF_, UDoF_;
 
   // Is the filter initialized?
   bool initialized = false;
+
+  // Matrices for computation
+  MatrixXd A, B, C, Q, R, P, K;
 
   bool predicted_;
 
