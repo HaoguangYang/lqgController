@@ -18,18 +18,15 @@
 
 #include <eigen3/Eigen/Dense>
 #include <functional>
-#include <iostream>
 #include <mutex>
 #include <thread>
 #include <tuple>
 #include <utility>
 #include <vector>
+// #include <iostream>
 
 #include "lqg_control/Kalman.hpp"
-#include "lqg_control/LQR.hpp"
 #include "lqg_control/lqr_control.hpp"
-// #include "rclcpp/rclcpp.hpp"
-// #include "std_msgs/msg/float64_multi_array.hpp"
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -159,7 +156,7 @@ class LqgControl : public LqrControl {
 
   virtual ~LqgControl() { delete (this->optimal_state_estimate); };
 
-  bool isInitialized() override {
+  bool isInitialized() const override {
     if (this->optimal_controller == NULL) return false;
     if (this->optimal_state_estimate == NULL) return false;
     return this->optimal_controller->isInitialized() &&

@@ -97,13 +97,13 @@ class dLQR {
    * doi: 10.1109/PROC.1984.13083.
    */
   MatrixXd care(const MatrixXd &A, const MatrixXd &B, const MatrixXd &Q, const MatrixXd &R,
-                const MatrixXd &N);
+                const MatrixXd &N) const;
 
   /**
    * @brief The DARE solver is based on:
    * https://github.com/arunabh1904/LQR-ROS/blob/master/lqr_obsavoid/src/are_solver.cpp.
    */
-  MatrixXd dare(const MatrixXd &A, const MatrixXd &B, const MatrixXd &Q, const MatrixXd &R);
+  MatrixXd dare(const MatrixXd &A, const MatrixXd &B, const MatrixXd &Q, const MatrixXd &R) const;
 
   /**
    *  @brief Input the current states and desired states, output the control values
@@ -113,7 +113,7 @@ class dLQR {
    */
   VectorXd calculateControl(const VectorXd &X, const VectorXd &Xd);
 
-  std::pair<MatrixXd, VectorXd> balance_matrix(const MatrixXd &A);
+  std::pair<MatrixXd, VectorXd> balance_matrix(const MatrixXd &A) const;
 
   /**
    *  @brief Get the current LQR gain.

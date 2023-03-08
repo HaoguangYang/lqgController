@@ -127,7 +127,7 @@ rcl_interfaces::msg::SetParametersResult LqgControlNode::paramUpdateCallback(
 
 void LqgControlNode::updateMeasurement(const std_msgs::msg::Float64MultiArray::SharedPtr msg) {
   this->controller_->updateMeasurement(msg->data);
-  lastMeasUpdTime_ = toSecs(this->get_clock()->now());
+  lastMeasUpdTime_ = toSecs(this->now());
 }
 
 void LqgControlNode::updateMeasurementCov(const std_msgs::msg::Float64MultiArray::SharedPtr msg) {
@@ -142,14 +142,13 @@ void LqgControlNode::controlCallback() {
   // call controller->controlCallback and update raw commands.
   if (!this->controller_->isInitialized()) {
     this->controller_->setCmdToZeros();
-    auto clock = this->get_clock();
-    RCLCPP_WARN_THROTTLE(this->get_logger(), *clock, 2000U,
+    RCLCPP_WARN_THROTTLE(this->get_logger(), *(this->get_clock()), 2000U,
                          "Controller still waiting for initial state to initialize...");
     return;
   }
 
   bool hasNewMeas = lastMeasUpdTime_ > lastCtrlTime_;
-  lastCtrlTime_ = toSecs(this->get_clock()->now());
+  lastCtrlTime_ = toSecs(this->now());
   this->controller_->controlCallback(!hasNewMeas);
 
   if (!this->mute_) this->publishCommand();

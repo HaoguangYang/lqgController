@@ -64,7 +64,8 @@ dLQR::dLQR(const MatrixXd &A, const MatrixXd &B, const MatrixXd &Q, const Matrix
   this->initialized = true;
 }
 
-MatrixXd dLQR::dare(const MatrixXd &A, const MatrixXd &B, const MatrixXd &Q, const MatrixXd &R) {
+MatrixXd dLQR::dare(const MatrixXd &A, const MatrixXd &B, const MatrixXd &Q,
+                    const MatrixXd &R) const {
   // TODO:
   // https://math.stackexchange.com/questions/1777348/lqr-problem-with-interaction-term-between-state-and-control
   const int dim_x = A.cols();
@@ -195,7 +196,7 @@ MatrixXd dLQR::dare(const MatrixXd &A, const MatrixXd &B, const MatrixXd &Q, con
 */
 
 MatrixXd dLQR::care(const MatrixXd &A, const MatrixXd &B, const MatrixXd &Q, const MatrixXd &R,
-                    const MatrixXd &N) {
+                    const MatrixXd &N) const {
   const int dim_x = A.rows();
   // const int dim_u = B.cols();
 
@@ -235,7 +236,7 @@ MatrixXd dLQR::care(const MatrixXd &A, const MatrixXd &B, const MatrixXd &Q, con
   return ret;
 }
 
-std::pair<MatrixXd, VectorXd> dLQR::balance_matrix(const MatrixXd &A) {
+std::pair<MatrixXd, VectorXd> dLQR::balance_matrix(const MatrixXd &A) const {
   // https://arxiv.org/pdf/1401.5766.pdf (Algorithm #3)
   const int p = 2;
   const double beta = 2.;  // Radix base (2)

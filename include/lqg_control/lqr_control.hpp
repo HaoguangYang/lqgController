@@ -18,17 +18,14 @@
 
 #include <eigen3/Eigen/Dense>
 #include <functional>
-#include <iostream>
 #include <mutex>
 #include <thread>
 #include <tuple>
 #include <utility>
 #include <vector>
+// #include <iostream>
 
-#include "lqg_control/Kalman.hpp"
 #include "lqg_control/LQR.hpp"
-// #include "rclcpp/rclcpp.hpp"
-// #include "std_msgs/msg/float64_multi_array.hpp"
 
 using control::pseudoInverse;
 using Eigen::MatrixXd;
@@ -182,7 +179,7 @@ class LqrControl {
 
   virtual ~LqrControl() { delete (this->optimal_controller); };
 
-  virtual bool isInitialized() {
+  virtual bool isInitialized() const {
     if (this->optimal_controller == NULL) return false;
     return this->optimal_controller->isInitialized();
   };
