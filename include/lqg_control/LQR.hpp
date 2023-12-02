@@ -39,6 +39,7 @@
 #include <eigen3/Eigen/Eigenvalues>
 #include <eigen3/Eigen/LU>
 #include <utility>
+#include <cassert>
 // #include <armadillo>
 
 using Eigen::MatrixXd;

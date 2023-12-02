@@ -14,6 +14,7 @@
 #define _KALMAN_FILTER_H_
 
 #include <eigen3/Eigen/Dense>
+#include <cassert>
 
 // #include <iostream>
 // #include <stdexcept>
